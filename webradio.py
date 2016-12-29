@@ -510,8 +510,6 @@ while (abbruch == 0):
 				#
 				if (auswahl_menu == 4):
 					subprocess.call(["mpc", "stop"])
-					usbmodus = 0
-					radiomodus = 0
 					
 				#
 				# USB Modus
