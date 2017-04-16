@@ -54,7 +54,7 @@ radiomodus = 1
 usbmodus = 0
 stationsliste = []
 usbliste = []
-menuliste = ["USB-Stick","Selbsttest","Debug-Modus","Herunterfahren","Wiedegabe anhalten","Test1","Test2","Test3"]
+menuliste = ["USB-Stick","Selbsttest","Debug-Modus","Herunterfahren","Wiedegabe anhalten","Nachtmodus","Test1","Test2"]
 
 # CGRAM Benutzerdefinierte Zeichen festlegen
 play = [16,24,28,30,30,28,24,16] # Abspielen-Zeichen
@@ -513,6 +513,25 @@ while (abbruch == 0):
 					IO.output(ausgang1, IO.HIGH)
 					IO.output(ausgang2, IO.LOW)
 					IO.output(ausgang3, IO.LOW)
+				#
+				# Nachtmodus
+				#
+				if (auswahl_menu == 5):
+					# Display Beleuchtung ausschalten
+					IO.output(ausgang4, IO.LOW)
+					# LED ausschalten
+					IO.output(ausgang1, IO.LOW)
+					IO.output(ausgang2, IO.LOW)
+					IO.output(ausgang3, IO.LOW)
+					while (taste1 == 0 and taste2 == 0 and taste3 == 0 and taste4 == 0):
+						time.sleep(0.1)
+					# Alles wieder zuruecksetzen
+					IO.output(ausgang4, IO.HIGH)
+					IO.output(ausgang1, IO.HIGH)
+					taste1=0
+					taste2=0
+					taste3=0
+					taste4=0
 				#
 				# Herunterfahren
 				#
