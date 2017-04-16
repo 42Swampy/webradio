@@ -54,7 +54,7 @@ radiomodus = 1
 usbmodus = 0
 stationsliste = []
 usbliste = []
-menuliste = ["USB-Stick","Lautstaerke","Debug-Modus","Herunterfahren","Wiedegabe anhalten","Test1","Test2","Test3"]
+menuliste = ["USB-Stick","Selbsttest","Debug-Modus","Herunterfahren","Wiedegabe anhalten","Test1","Test2","Test3"]
 
 # CGRAM Benutzerdefinierte Zeichen festlegen
 play = [16,24,28,30,30,28,24,16] # Abspielen-Zeichen
@@ -439,6 +439,80 @@ while (abbruch == 0):
 				if (auswahl_menu == 2):
 					abbruch = 1
 					abbruch2 = 1
+				#
+				# Selbsttest
+				#
+				if (auswahl_menu == 1):
+					# Alles ausschalten
+					display_erase()
+					IO.output(ausgang1, IO.LOW)
+					IO.output(ausgang2, IO.LOW)
+					IO.output(ausgang3, IO.LOW)
+					subprocess.call(["mpc", "stop"])
+					# Display testen
+					display_erase()
+					lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
+					lcd_string("Displaytest:")
+					lcd_byte(DISPLAY_LINE_2, DISPLAY_CMD)
+					lcd_string("--------------------")
+					lcd_byte(DISPLAY_LINE_3, DISPLAY_CMD)
+					lcd_string("ABCDEFGHIJKLMNOPQRST")
+					lcd_byte(DISPLAY_LINE_4, DISPLAY_CMD)
+					lcd_string("abcdefghijklmnopqrst")
+					time.sleep(1.50)
+					display_erase()
+					# Audioausgabe testen
+					display_erase()
+					lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
+					lcd_string("Test Audio links:")
+					lcd_byte(DISPLAY_LINE_2, DISPLAY_CMD)
+					lcd_string("--------------------")
+					subprocess.call("speaker-test -t wav -w Front_Left.wav -c 2 -s 1", shell=True)
+					time.sleep(1.50)
+					display_erase()
+					lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
+					lcd_string("Test Audio rechts:")
+					lcd_byte(DISPLAY_LINE_2, DISPLAY_CMD)
+					lcd_string("--------------------")
+					subprocess.call("speaker-test -t wav -w Front_Right.wav -c 2 -s 2", shell=True)
+					time.sleep(1.50)
+					# LEDs testen
+					display_erase()
+					lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
+					lcd_string("LED Test 1 (Grün):")
+					lcd_byte(DISPLAY_LINE_2, DISPLAY_CMD)
+					lcd_string("--------------------")
+					IO.output(ausgang1, IO.HIGH)
+					IO.output(ausgang2, IO.LOW)
+					IO.output(ausgang3, IO.LOW)
+					time.sleep(1.50)
+					display_erase()
+					lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
+					lcd_string("LED Test 2 (Blau):")
+					lcd_byte(DISPLAY_LINE_2, DISPLAY_CMD)
+					lcd_string("--------------------")
+					IO.output(ausgang1, IO.LOW)
+					IO.output(ausgang2, IO.HIGH)
+					IO.output(ausgang3, IO.LOW)
+					time.sleep(1.50)
+					display_erase()
+					lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
+					lcd_string("LED Test 3 (Rot):")
+					lcd_byte(DISPLAY_LINE_2, DISPLAY_CMD)
+					lcd_string("--------------------")
+					IO.output(ausgang1, IO.LOW)
+					IO.output(ausgang2, IO.LOW)
+					IO.output(ausgang3, IO.HIGH)
+					time.sleep(1.50)
+					# Optionsmenue wieder herstellen
+					display_erase()
+					lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
+					lcd_string("  "+chr(5)+"    "+chr(7)+"    "+chr(4)+"    "+chr(6))
+					# Altes Menue anzeigen
+					Optionsmenue()
+					IO.output(ausgang1, IO.HIGH)
+					IO.output(ausgang2, IO.LOW)
+					IO.output(ausgang3, IO.LOW)
 				#
 				# Herunterfahren
 				#
