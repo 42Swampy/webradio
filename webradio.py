@@ -7,6 +7,7 @@
 import os
 import subprocess
 import time
+import feedparser
 import RPi.GPIO as IO # RPi.GPIO wird jetzt als IO angesprochen
 
 # GPIO Warnungen ausschalten
@@ -50,11 +51,13 @@ abbruch3 = 0
 abbruch4 = 0
 anzahl_stationen = 0
 anzahl_mp3 = 0
+anzahl_feeds = 0
 radiomodus = 1
 usbmodus = 0
+feedliste = []
 stationsliste = []
 usbliste = []
-menuliste = ["USB-Stick","Selbsttest","Debug-Modus","Herunterfahren","Wiedegabe anhalten","Nachtmodus","Test1","Test2"]
+menuliste = ["USB-Stick","Selbsttest","Debug-Modus","Herunterfahren","Wiedegabe anhalten","Nachtmodus","RSS-Feeds","Test"]
 
 # CGRAM Benutzerdefinierte Zeichen festlegen
 play = [16,24,28,30,30,28,24,16] # Abspielen-Zeichen
@@ -227,7 +230,7 @@ def laufschrift(bereich):
 		if (taste1 == 1) or (taste2 == 1) or (taste3 == 1) or (taste4 == 1):
 			break
 
-# Stationsnamen einlesen
+# Stationsnamen - Datei einlesen
 def Stationsnamen(stationsliste):
 	# Datei zum Lesen oeffnen
 	d = open("/home/pi/playlists/radiosender.m3u","r")
@@ -243,21 +246,37 @@ def Stationsnamen(stationsliste):
 		stationsliste.append((allezeilen[((zeile*2)-1)])[11:(laenge_zeile-1)])
 	return stationsliste
 
-# USB - Dateien einlesen
+# USB - Datei einlesen
 def Usbnamen(usbliste):
 	# Datei zum Lesen oeffnen
-	d = open("/home/pi/usb_liste.dat","r")
+	d = open("/home/pi/playlists/usbliste.m3u","r")
 	# Einlesen der Zeilen in der Datei
 	allezeilen = d.readlines()
 	# Schließen der Datei
 	d.close()
-	# Anzahl der Stationen (Ueberfluessige Zeilen abgezogen)
+	# Anzahl der Dateien (Ueberfluessige Zeilen abgezogen)
 	global anzahl_mp3
 	anzahl_mp3 = (int(len(allezeilen)))
 	for zeile in range(0,(anzahl_mp3)):
 		laenge_zeile = len (allezeilen[zeile])
 		usbliste.append((allezeilen[zeile])[0:(laenge_zeile-1)])
 	return usbliste
+	
+# RSS-Feed - Datei einlesen
+def rssnamen(feedliste):
+	# Datei zum Lesen oeffnen
+	d = open("/home/pi/playlists/rssfeeds.m3u","r")
+	# Einlesen der Zeilen in der Datei
+	allezeilen = d.readlines()
+	# Schließen der Datei
+	d.close()
+	# Anzahl der RSS-Feeds (Ueberfluessige Zeilen abgezogen)
+	global anzahl_feeds
+	anzahl_feeds = (int(len(allezeilen)))
+	for zeile in range(0,(anzahl_feeds)):
+		laenge_zeile = len (allezeilen[zeile])
+		feedliste.append((allezeilen[zeile])[0:(laenge_zeile-1)])
+	return feedliste
 
 # Optionsmenue anzeigen
 def Optionsmenue():
@@ -532,6 +551,20 @@ while (abbruch == 0):
 					taste2=0
 					taste3=0
 					taste4=0
+					
+				#
+				# RSS - Feed
+				#
+				if (auswahl_menu == 6):
+					# Menue auf LCD anzeigen
+					#display_erase()
+					#lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
+					#lcd_string("  "+chr(0)+"    "+chr(1)+"    "+chr(2)+"    "+chr(3))
+					rssnamen(feedliste)
+					print (anzahl_feeds)
+					print (feedliste)
+					while (taste1 == 0 and taste2 == 0 and taste3 == 0 and taste4 == 0):
+						time.sleep(0.1)
 				#
 				# Herunterfahren
 				#
@@ -614,7 +647,7 @@ while (abbruch == 0):
 						subprocess.call(["mpc", "clear"])
 						subprocess.call("mpc update --wait", shell=True)
 						subprocess.call("mpc ls | mpc add usb0", shell=True)
-						subprocess.call("mpc listall > /home/pi/usb_liste.dat", shell=True)
+						subprocess.call("mpc listall > /home/pi/playlists/usbliste.m3u", shell=True)
 						# Eintraege aud Datei holen
 						# Variable - USB - Liste leeren
 						usbliste = []
