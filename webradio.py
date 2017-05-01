@@ -44,16 +44,19 @@ taste3 = 0
 taste4 = 0
 auswahl = 1
 auswahl2 = 1
+auswahl3 = 1
 auswahl_menu = 1
 abbruch = 0
 abbruch2 = 0
 abbruch3 = 0
 abbruch4 = 0
+abbruch5 = 0
 anzahl_stationen = 0
 anzahl_mp3 = 0
 anzahl_feeds = 0
 radiomodus = 1
 usbmodus = 0
+ganzer_feed = " "
 feedliste = []
 stationsliste = []
 usbliste = []
@@ -557,14 +560,81 @@ while (abbruch == 0):
 				#
 				if (auswahl_menu == 6):
 					# Menue auf LCD anzeigen
-					#display_erase()
-					#lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
-					#lcd_string("  "+chr(0)+"    "+chr(1)+"    "+chr(2)+"    "+chr(3))
+					display_erase()
+					lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
+					lcd_string("  "+chr(0)+"    "+chr(1)+"    "+chr(2)+"    "+chr(6))
+					# Die RSS - Feed URLs aus Datei einlesen
 					rssnamen(feedliste)
 					print (anzahl_feeds)
 					print (feedliste)
-					while (taste1 == 0 and taste2 == 0 and taste3 == 0 and taste4 == 0):
-						time.sleep(0.1)
+					while (abbruch5 == 0):
+						# Auswahl anzeigen
+						lcd_byte(DISPLAY_LINE_2, DISPLAY_CMD)
+						lcd_string("RSS-Feed ("+str(auswahl3)+")")
+						lcd_byte(DISPLAY_LINE_3, DISPLAY_CMD)
+						lcd_string(feedliste[(auswahl3-1)])
+						# Taster auswerten						
+						if (taste1 == 1):
+							print ("Eingang 1")
+							taste1 = 0   #Taste zuruecksetzen						
+							# Feed herunterladen anzeigen
+							print ("Lade RSS-Feed")
+							lcd_byte(DISPLAY_LINE_4, DISPLAY_CMD)
+							lcd_string("                    ")
+							lcd_byte(DISPLAY_LINE_4, DISPLAY_CMD)
+							lcd_string("Lade RSS-Feed")
+							# Feed herunterladen
+							d=feedparser.parse(feedliste[(auswahl3-1)])
+							print ("RSS-Feed geladen")
+							lcd_byte(DISPLAY_LINE_4, DISPLAY_CMD)
+							lcd_string("                    ")
+							time.sleep(0.01)
+							# Titel als erstes lesen
+							ganzer_feed = " "
+							ganzer_feed = ganzer_feed+(d.feed.title)+" --- "
+							# Die Feeds danach lesen
+							for i in range(len(d['entries'])):   # Anzahl der Eintraege: len(d['entries'])
+								ganzer_feed = ganzer_feed+(d.entries[i].title)+" --- "
+							station = ganzer_feed # Variable fuer Laufschriftfunktion 
+							# 20 Leerzeichen an station anhaengen
+							station = station + "                    "
+							laenge = len(station)
+							bereich = laenge - 19
+							print (bereich)
+							print (station)
+							laufschrift(bereich)
+						elif (taste2 == 1):
+							# RSS - Feed erhoehen
+							print ("Eingang 2")
+							auswahl3=auswahl3-1
+							# Wenn Feedanfang erreicht ist, wieder auf Feedende springen
+							if (auswahl3 == 0):
+								auswahl3 = anzahl_feeds
+								print (auswahl3)
+							taste2 = 0   # Taste zuruecksetzen
+							time.sleep(0.01)
+						elif (taste3 == 1):
+							# RSS - Feed erniedrigen
+							print ("Eingang 3")
+							auswahl3=auswahl3+1
+							# Wenn Feedende erreicht ist, wieder auf Feedanfang springen
+							if (auswahl3 == (anzahl_feeds+1)):
+								auswahl3 = 1
+								print (auswahl3)
+							taste3 = 0   #Taste zuruecksetzen
+							time.sleep(0.01)
+						elif (taste4 == 1):
+							# RSS - Menue beenden
+							print ("Eingang 4")
+							taste4 = 0   #Taste zuruecksetzen
+							abbruch5 = 1
+							time.sleep(0.01)
+					abbruch5 = 0
+					# Optionsmenue anzeigen
+					display_erase()
+					lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
+					lcd_string("  "+chr(5)+"    "+chr(7)+"    "+chr(4)+"    "+chr(6))
+					Optionsmenue()
 				#
 				# Herunterfahren
 				#
