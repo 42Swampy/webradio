@@ -35,9 +35,9 @@ DISPLAY_DATA6 = 23
 DISPLAY_DATA7 = 18
 
 # Deklarieren der Variabeln Sonstige Variablen
-led1 = 0
-led2 = 0
-led3 = 0
+led1 = 0 # Gruen
+led2 = 0 # Blau
+led3 = 0 # Rot
 taste1 = 0
 taste2 = 0
 taste3 = 0
@@ -56,11 +56,15 @@ anzahl_mp3 = 0
 anzahl_feeds = 0
 radiomodus = 1
 usbmodus = 0
+laufzeit = 0
 ganzer_feed = " "
 feedliste = []
 stationsliste = []
 usbliste = []
-menuliste = ["USB-Stick","Selbsttest","Debug-Modus","Herunterfahren","Wiedegabe anhalten","Nachtmodus","RSS-Feeds","Test"]
+menuliste = ["USB-Stick","Selbsttest","Debug-Modus","Herunterfahren","Wiedegabe anhalten","Nachtmodus","RSS-Feeds","Uhr/Timer"]
+uhrzeit = time.localtime() # Uhrzeit/Datum holen
+zeiteinstellung = 0
+timer = 0
 
 # CGRAM Benutzerdefinierte Zeichen festlegen
 play = [16,24,28,30,30,28,24,16] # Abspielen-Zeichen
@@ -304,6 +308,36 @@ def Optionsmenue():
 		lcd_byte(DISPLAY_LINE_4, DISPLAY_CMD)
 		lcd_string("  "+menuliste[(auswahl_menu+1)])
 
+# Herunterfahren
+def Herunterfahren():
+	print ("Eingang 1")
+	taste1 = 0   #Taste zuruecksetzen
+	display_erase()
+	lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
+	lcd_string("********************")
+	lcd_byte(DISPLAY_LINE_2, DISPLAY_CMD)
+	lcd_string("* Webradio wird    *")
+	lcd_byte(DISPLAY_LINE_3, DISPLAY_CMD)
+	lcd_string("* heruntergefahren *")
+	lcd_byte(DISPLAY_LINE_4, DISPLAY_CMD)
+	lcd_string("********************")
+	time.sleep(1)
+	display_erase()
+	# mpd beenden
+	subprocess.call(["mpc", "stop"])
+	# LED ausschalten
+	IO.output(ausgang1, IO.LOW)
+	IO.output(ausgang2, IO.LOW)
+	IO.output(ausgang3, IO.LOW)
+	# LCD-Anzeige loeschen
+	display_erase()
+	# Display Beleuchtung ausschalten
+	IO.output(ausgang4, IO.LOW)
+	# Herunterfahren
+	print ("Fahre System herunter")
+	subprocess.call(["sudo", "halt"])
+	time.sleep(10)
+
 #
 # Starten
 #
@@ -366,6 +400,8 @@ IO.add_event_detect(eingang4, IO.FALLING, callback=Taster4, bouncetime=500)
 # Eingabe machen
 # Taster abfragen
 while (abbruch == 0):
+	if ((timer == 1) and (laufzeit <= (int(time.time())))):
+		Herunterfahren()
 	# Auswahl anzeigen
 	lcd_byte(DISPLAY_LINE_2, DISPLAY_CMD)
 	lcd_string("Radiomodus ("+str(auswahl)+")")
@@ -437,6 +473,8 @@ while (abbruch == 0):
 		Optionsmenue()
 		# Optionsmenue auswerten
 		while (abbruch2 == 0):
+			if ((timer == 1) and (laufzeit <= (int(time.time())))):
+				Herunterfahren()
 			# Taster auswerten
 			# Im Optionsmenue eins runter gehen
 			if (taste1 == 1):
@@ -546,6 +584,8 @@ while (abbruch == 0):
 					IO.output(ausgang2, IO.LOW)
 					IO.output(ausgang3, IO.LOW)
 					while (taste1 == 0 and taste2 == 0 and taste3 == 0 and taste4 == 0):
+						if ((timer == 1) and (laufzeit <= (int(time.time())))):
+							Herunterfahren()
 						time.sleep(0.1)
 					# Alles wieder zuruecksetzen
 					IO.output(ausgang4, IO.HIGH)
@@ -554,7 +594,84 @@ while (abbruch == 0):
 					taste2=0
 					taste3=0
 					taste4=0
-					
+					IO.output(ausgang3, IO.LOW)
+				#
+				# Uhr/Timer
+				#
+				if (auswahl_menu == 7):
+					# Menue auf LCD anzeigen
+					display_erase()
+					lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
+					lcd_string("  "+chr(5)+"    "+chr(7)+"    "+chr(4)+"    "+chr(6))
+					if ((timer == 0) or (zeiteinstellung == 0)):
+						lcd_byte(DISPLAY_LINE_3, DISPLAY_CMD)
+						lcd_string("Timer: (aus)")
+					else:
+						lcd_byte(DISPLAY_LINE_3, DISPLAY_CMD)
+						lcd_string("Timer: "+str(zeiteinstellung)+" (min)")
+					while (abbruch5 == 0):
+						if ((timer == 1) and (laufzeit <= (int(time.time())))):
+							Herunterfahren()
+						# Laufzeit nicht negativ werden lassen
+						if (laufzeit <= 0):
+							laufzeit = int(time.time())
+						# Datum und Uhrzeit ausgeben
+						lcd_byte(DISPLAY_LINE_2, DISPLAY_CMD)
+						lcd_string(time.strftime("%d.%m.%Y %H:%M:%S"))
+						# Countdown ausgeben
+						if (timer == 1):
+							lcd_byte(DISPLAY_LINE_4, DISPLAY_CMD)
+							lcd_string("Noch "+str(int(((laufzeit/60)-(time.time()/60)))+1)+" Minuten")
+						else:
+							lcd_byte(DISPLAY_LINE_4, DISPLAY_CMD)
+							lcd_string("Timer ausgeschaltet ")
+						# Um 10 min erhoehen
+						if (taste1 == 1):
+							# Zeit nicht negativ werden lassen
+							if (zeiteinstellung < 10):
+								zeiteinstellung = 0
+							else:
+								zeiteinstellung = zeiteinstellung-10
+							if (zeiteinstellung == 0):
+								lcd_byte(DISPLAY_LINE_3, DISPLAY_CMD)
+								lcd_string("Timer: (aus)")
+							else:
+								lcd_byte(DISPLAY_LINE_3, DISPLAY_CMD)
+								lcd_string("Timer: "+str(zeiteinstellung)+" (min)")
+							taste1 = 0   #Taste zuruecksetzen
+							time.sleep(0.01)
+						if (taste2 == 1):
+							# Betriebszeit setzen
+							laufzeit = (int(time.time())+(zeiteinstellung*60))
+							# Timer an- oder ausschalten
+							if (laufzeit > time.time()):
+								timer = 1
+							else:
+								timer = 0	
+							taste2 = 0   #Taste zuruecksetzen
+							time.sleep(0.01)
+						# Um 10 min verringern
+						if (taste3 == 1):
+							zeiteinstellung = zeiteinstellung+10
+							# Zeitrahmen 24 Stunden
+							if (zeiteinstellung > 1450):
+								zeiteinstellung = 1450
+							lcd_byte(DISPLAY_LINE_3, DISPLAY_CMD)
+							lcd_string("Timer: "+str(zeiteinstellung)+" (min)")
+							taste3 = 0   #Taste zuruecksetzen
+							time.sleep(0.01)
+						elif (taste4 == 1):
+							# RSS - Menue beenden
+							print ("Eingang 4")
+							taste4 = 0   #Taste zuruecksetzen
+							abbruch5 = 1
+							time.sleep(0.01)
+					abbruch5 = 0
+					# Optionsmenue anzeigen
+					display_erase()
+					lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
+					lcd_string("  "+chr(5)+"    "+chr(7)+"    "+chr(4)+"    "+chr(6))
+					Optionsmenue()
 				#
 				# RSS - Feed
 				#
@@ -568,6 +685,8 @@ while (abbruch == 0):
 					print (anzahl_feeds)
 					print (feedliste)
 					while (abbruch5 == 0):
+						if ((timer == 1) and (laufzeit <= (int(time.time())))):
+							Herunterfahren()
 						# Auswahl anzeigen
 						lcd_byte(DISPLAY_LINE_2, DISPLAY_CMD)
 						lcd_string("RSS-Feed ("+str(auswahl3)+")")
@@ -641,6 +760,8 @@ while (abbruch == 0):
 				if (auswahl_menu == 3):
 					display_erase()
 					while  (abbruch4 == 0):
+						if ((timer == 1) and (laufzeit <= (int(time.time())))):
+							Herunterfahren()
 						lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
 						lcd_string("  "+chr(7)+"              "+chr(6)+"  ")
 						lcd_byte(DISPLAY_LINE_2, DISPLAY_CMD)
@@ -651,34 +772,7 @@ while (abbruch == 0):
 						lcd_string(" Sind Sie sicher ?  ")
 						# Taster auswerten
 						if (taste1 == 1):
-							# Herunterfahren Menue
-							print ("Eingang 1")
-							taste1 = 0   #Taste zuruecksetzen
-							display_erase()
-							lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
-							lcd_string("********************")
-							lcd_byte(DISPLAY_LINE_2, DISPLAY_CMD)
-							lcd_string("* Webradio wird    *")
-							lcd_byte(DISPLAY_LINE_3, DISPLAY_CMD)
-							lcd_string("* heruntergefahren *")
-							lcd_byte(DISPLAY_LINE_4, DISPLAY_CMD)
-							lcd_string("********************")
-							time.sleep(1)
-							display_erase()
-							# mpd beenden
-							subprocess.call(["mpc", "stop"])
-							# LED ausschalten
-							IO.output(ausgang1, IO.LOW)
-							IO.output(ausgang2, IO.LOW)
-							IO.output(ausgang3, IO.LOW)
-							# LCD-Anzeige loeschen
-							display_erase()
-							# Display Beleuchtung ausschalten
-							IO.output(ausgang4, IO.LOW)
-							# Herunterfahren
-							print ("Fahre System herunter")
-							subprocess.call(["sudo", "halt"])
-							time.sleep(10)
+							Herunterfahren()
 						elif (taste2 == 1):
 							# Keine Funktion
 							print ("Eingang 2")
@@ -737,6 +831,8 @@ while (abbruch == 0):
 					lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
 					lcd_string("  "+chr(0)+"    "+chr(1)+"    "+chr(2)+"    "+chr(6))
 					while ((abbruch3 == 0) and (anzahl_mp3 > 0)):
+						if ((timer == 1) and (laufzeit <= (int(time.time())))):
+							Herunterfahren()
 						# Auswahl anzeigen
 						lcd_byte(DISPLAY_LINE_2, DISPLAY_CMD)
 						lcd_string("USB - Stick ("+str(auswahl2)+")")
