@@ -62,7 +62,6 @@ feedliste = []
 stationsliste = []
 usbliste = []
 menuliste = ["USB-Stick","Selbsttest","Debug-Modus","Herunterfahren","Wiedegabe anhalten","Nachtmodus","RSS-Feeds","Uhr/Timer"]
-uhrzeit = time.localtime() # Uhrzeit/Datum holen
 zeiteinstellung = 0
 timer = 0
 
@@ -224,6 +223,9 @@ def display_erase():
 
 # Laufschrift Funktion
 def laufschrift(bereich):
+	# Variablen fuer Timer global setzen
+	global timer
+	global laufzeit
 	for i in range(0,bereich):
 		# Zeile ausgeben
 		ausgabe_laufschrift = station[i:(i+20)]
@@ -236,6 +238,9 @@ def laufschrift(bereich):
 		# Bei Tastendruck Schleife beenden
 		if (taste1 == 1) or (taste2 == 1) or (taste3 == 1) or (taste4 == 1):
 			break
+		# Bei Timer herunterfahren
+		if ((timer == 1) and (laufzeit <= (int(time.time())))):
+			Herunterfahren()
 
 # Stationsnamen - Datei einlesen
 def Stationsnamen(stationsliste):
@@ -456,9 +461,11 @@ while (abbruch == 0):
 		taste3 = 0   # Taste zuruecksetzen
 		time.sleep(0.01)
 	elif (taste4 == 1):
+		
 		#
 		# Optionsmenue
 		#
+		
 		print ("Eingang 4")
 		print (auswahl)
 		taste4 = 0   # Taste zuruecksetzen
@@ -493,15 +500,19 @@ while (abbruch == 0):
 				print ("Eingang 2")
 				print (auswahl)
 				taste2 = 0   #Taste zuruecksetzen
+				
 				#
 				# Debug-Modus
 				#
+				
 				if (auswahl_menu == 2):
 					abbruch = 1
 					abbruch2 = 1
+					
 				#
 				# Selbsttest
 				#
+				
 				if (auswahl_menu == 1):
 					# Alles ausschalten
 					display_erase()
@@ -573,9 +584,11 @@ while (abbruch == 0):
 					IO.output(ausgang1, IO.HIGH)
 					IO.output(ausgang2, IO.LOW)
 					IO.output(ausgang3, IO.LOW)
+					
 				#
 				# Nachtmodus
 				#
+				
 				if (auswahl_menu == 5):
 					# Display Beleuchtung ausschalten
 					IO.output(ausgang4, IO.LOW)
@@ -595,14 +608,17 @@ while (abbruch == 0):
 					taste3=0
 					taste4=0
 					IO.output(ausgang3, IO.LOW)
+					
 				#
 				# Uhr/Timer
 				#
+				
 				if (auswahl_menu == 7):
 					# Menue auf LCD anzeigen
 					display_erase()
 					lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
 					lcd_string("  "+chr(5)+"    "+chr(7)+"    "+chr(4)+"    "+chr(6))
+					# Laufzeit anzeigen
 					if ((timer == 0) or (zeiteinstellung == 0)):
 						lcd_byte(DISPLAY_LINE_3, DISPLAY_CMD)
 						lcd_string("Timer: (aus)")
@@ -661,7 +677,7 @@ while (abbruch == 0):
 							taste3 = 0   #Taste zuruecksetzen
 							time.sleep(0.01)
 						elif (taste4 == 1):
-							# RSS - Menue beenden
+							# Uhr/Timer - Menue beenden
 							print ("Eingang 4")
 							taste4 = 0   #Taste zuruecksetzen
 							abbruch5 = 1
@@ -672,9 +688,11 @@ while (abbruch == 0):
 					lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
 					lcd_string("  "+chr(5)+"    "+chr(7)+"    "+chr(4)+"    "+chr(6))
 					Optionsmenue()
+					
 				#
 				# RSS - Feed
 				#
+				
 				if (auswahl_menu == 6):
 					# Menue auf LCD anzeigen
 					display_erase()
@@ -754,9 +772,11 @@ while (abbruch == 0):
 					lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
 					lcd_string("  "+chr(5)+"    "+chr(7)+"    "+chr(4)+"    "+chr(6))
 					Optionsmenue()
+					
 				#
 				# Herunterfahren
 				#
+				
 				if (auswahl_menu == 3):
 					display_erase()
 					while  (abbruch4 == 0):
@@ -795,15 +815,18 @@ while (abbruch == 0):
 					lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
 					lcd_string("  "+chr(5)+"    "+chr(7)+"    "+chr(4)+"    "+chr(6))
 					Optionsmenue()
+					
 				#
 				# Wiedergabe anhalten
 				#
+				
 				if (auswahl_menu == 4):
 					subprocess.call(["mpc", "stop"])
 					
 				#
 				# USB Modus
 				#
+				
 				if (auswahl_menu == 0):
 					if (usbmodus == 0):
 						# MPC vorbereiten
