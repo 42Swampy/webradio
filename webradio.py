@@ -45,6 +45,7 @@ taste4 = 0
 auswahl = 1
 auswahl2 = 1
 auswahl3 = 1
+auswahl4 = 1
 auswahl_menu = 1
 abbruch = 0
 abbruch2 = 0
@@ -57,11 +58,14 @@ anzahl_feeds = 0
 radiomodus = 1
 usbmodus = 0
 laufzeit = 0
+shufflemodus = 0
+repeatmodus = 0
+programmodus = 0
 ganzer_feed = " "
 feedliste = []
 stationsliste = []
 usbliste = []
-menuliste = ["USB-Stick","Selbsttest","Debug-Modus","Herunterfahren","Wiedegabe anhalten","Nachtmodus","RSS-Feeds","Uhr/Timer"]
+menuliste = ["USB-Stick","Selbsttest","Debug-Modus","Herunterfahren","Wiedegabe anhalten","Nachtmodus","RSS-Feeds","Uhr/Timer","Modus USB"]
 zeiteinstellung = 0
 timer = 0
 
@@ -289,6 +293,58 @@ def rssnamen(feedliste):
 		laenge_zeile = len (allezeilen[zeile])
 		feedliste.append((allezeilen[zeile])[0:(laenge_zeile-1)])
 	return feedliste
+
+# Status Menue USB - Shuffle, Repeat und Programm
+def statususb():
+	global shufflemodus
+	global repeatmodus
+	global programmodus
+	global auswahl4
+	# Anzeige nach Zustand - shuffle
+	if (shufflemodus == 0):
+		lcd_byte(DISPLAY_LINE_2, DISPLAY_CMD)
+		lcd_string("  Shuffle (aus)")
+		if (auswahl4 == 1):
+			lcd_byte(DISPLAY_LINE_2, DISPLAY_CMD)
+			lcd_string(chr(0)+" Shuffle (aus)")
+	elif (shufflemodus == 1):
+		lcd_byte(DISPLAY_LINE_2, DISPLAY_CMD)
+		lcd_string("  Shuffle (an)")
+		if (auswahl4 == 1):
+			lcd_byte(DISPLAY_LINE_2, DISPLAY_CMD)
+			lcd_string(chr(0)+" Shuffle (an)")
+	# Anzeige nach Zustand - repeat
+	if (repeatmodus == 0):
+		lcd_byte(DISPLAY_LINE_3, DISPLAY_CMD)
+		lcd_string("  Repeat (aus)")
+		if (auswahl4 == 2):
+			lcd_byte(DISPLAY_LINE_3, DISPLAY_CMD)
+			lcd_string(chr(0)+" Repeat (aus)")
+	elif (repeatmodus == 1):
+		lcd_byte(DISPLAY_LINE_3, DISPLAY_CMD)
+		lcd_string("  Repeat (alles)")
+		if (auswahl4 == 2):
+			lcd_byte(DISPLAY_LINE_3, DISPLAY_CMD)
+			lcd_string(chr(0)+" Repeat (alles)")
+	elif (repeatmodus == 2):
+		lcd_byte(DISPLAY_LINE_3, DISPLAY_CMD)
+		lcd_string("  Repeat (1 Stueck)")
+		if (auswahl4 == 2):
+			lcd_byte(DISPLAY_LINE_3, DISPLAY_CMD)
+			lcd_string(chr(0)+" Repeat (1 Stueck)")
+	# Anzeige nach Zustand - program
+	if (programmodus == 0):
+		lcd_byte(DISPLAY_LINE_4, DISPLAY_CMD)
+		lcd_string("  Programm (aus)")
+		if (auswahl4 == 3):
+			lcd_byte(DISPLAY_LINE_4, DISPLAY_CMD)
+			lcd_string(chr(0)+" Programm (aus)")
+	elif (programmodus == 1):
+		lcd_byte(DISPLAY_LINE_4, DISPLAY_CMD)
+		lcd_string("  Programm (an)")
+		if (auswahl4 == 3):
+			lcd_byte(DISPLAY_LINE_4, DISPLAY_CMD)
+			lcd_string(chr(0)+" Programm (an)")
 
 # Optionsmenue anzeigen
 def Optionsmenue():
@@ -885,7 +941,21 @@ while (abbruch == 0):
 							# USB Modus einschalten
 							usbmodus = 1
 							print ("Eingang 1")
+							# Auswertung shuffle, repeat und program
+							#
+							# shuffle
+							if (shufflemodus == 0):
+								subprocess.call(["mpc", "random", "off"])
+							elif (shufflemodus == 1):
+								subprocess.call(["mpc", "random", "on"])
+							# repeat
+							if (repeatmodus == 0):
+								subprocess.call(["mpc", "repeat", "off"])
+							elif ((repeatmodus == 1) or (repeatmodus == 2)):
+								subprocess.call(["mpc", "repeat", "on"])
 							subprocess.call(["mpc", "play", str(auswahl2)])
+							if (repeatmodus == 2):
+								subprocess.call(["mpc", "crop"])
 							taste1 = 0   #Taste zuruecksetzen
 							time.sleep(0.01)
 						elif (taste2 == 1):
@@ -917,6 +987,70 @@ while (abbruch == 0):
 					lcd_string("  "+chr(5)+"    "+chr(7)+"    "+chr(4)+"    "+chr(6))
 					# Altes Menue anzeigen
 					Optionsmenue()
+				
+				#
+				# USB Optionen
+				#
+				
+				if (auswahl_menu == 8):
+					# Menue auf LCD anzeigen
+					display_erase()
+					lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
+					lcd_string("  "+chr(5)+"    "+chr(7)+"    "+chr(4)+"    "+chr(6))
+					statususb()
+					while (abbruch3 == 0):
+						# Taster auswerten						
+						if (taste1 == 1):
+							print ("Eingang 1")
+							auswahl4=auswahl4+1
+							# Wenn Ende erreicht ist, wieder auf Anfang springen
+							if (auswahl4 == 4):
+								auswahl4 = 1
+							statususb()
+							taste1 = 0   #Taste zuruecksetzen						
+							time.sleep(0.01)
+						elif (taste2 == 1):
+							print ("Eingang 2")
+							# Shuffle
+							if (auswahl4 == 1):
+								if (shufflemodus == 0):
+									shufflemodus = 1
+								elif(shufflemodus == 1):
+									shufflemodus = 0
+							# Repeat
+							if (auswahl4 == 2):
+								if (repeatmodus == 0):
+									repeatmodus = 1
+								elif(repeatmodus == 1):
+									repeatmodus = 2
+								elif(repeatmodus == 2):
+									repeatmodus = 0
+							statususb()
+							taste2 = 0   # Taste zuruecksetzen
+							time.sleep(0.01)
+						elif (taste3 == 1):
+							print ("Eingang 3")
+							auswahl4=auswahl4-1
+							# Wenn Anfang erreicht ist, wieder auf Ende springen
+							if (auswahl4 == 0):
+								auswahl4 = 3
+							statususb()
+							taste3 = 0   #Taste zuruecksetzen
+							time.sleep(0.01)
+						elif (taste4 == 1):
+							print ("Eingang 4")
+							taste4 = 0   #Taste zuruecksetzen
+							abbruch3 = 1
+							time.sleep(0.01)
+					abbruch3 = 0
+					time.sleep(0.01)
+					# Optionsmenue wieder herstellen
+					display_erase()
+					lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
+					lcd_string("  "+chr(5)+"    "+chr(7)+"    "+chr(4)+"    "+chr(6))
+					# Altes Menue anzeigen
+					Optionsmenue()
+						
 			# Im Optionsmenue eins rauf gehen
 			elif (taste3 == 1):
 				print ("Eingang 3")
