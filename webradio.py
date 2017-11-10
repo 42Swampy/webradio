@@ -52,6 +52,7 @@ abbruch2 = 0
 abbruch3 = 0
 abbruch4 = 0
 abbruch5 = 0
+abbruch6 = 0
 anzahl_stationen = 0
 anzahl_mp3 = 0
 anzahl_feeds = 0
@@ -61,10 +62,12 @@ laufzeit = 0
 shufflemodus = 0
 repeatmodus = 0
 programmodus = 0
+programm = []
 ganzer_feed = " "
 feedliste = []
 stationsliste = []
 usbliste = []
+usbliste_temp = []
 menuliste = ["USB-Stick","Selbsttest","Debug-Modus","Herunterfahren","Wiedegabe anhalten","Nachtmodus","RSS-Feeds","Uhr/Timer","Modus USB"]
 zeiteinstellung = 0
 timer = 0
@@ -278,6 +281,15 @@ def Usbnamen(usbliste):
 		usbliste.append((allezeilen[zeile])[0:(laenge_zeile-1)])
 	return usbliste
 	
+# Meldung: kein USB-Stick
+def nousb():
+	display_erase()
+	lcd_byte(DISPLAY_LINE_3, DISPLAY_CMD)
+	lcd_string("Kein USB-Stick, oder")
+	lcd_byte(DISPLAY_LINE_4, DISPLAY_CMD)
+	lcd_string("   keine Dateien !  ")
+	time.sleep(1)
+	
 # RSS-Feed - Datei einlesen
 def rssnamen(feedliste):
 	# Datei zum Lesen oeffnen
@@ -345,6 +357,14 @@ def statususb():
 		if (auswahl4 == 3):
 			lcd_byte(DISPLAY_LINE_4, DISPLAY_CMD)
 			lcd_string(chr(0)+" Programm (an)")
+			
+# Playlist vorbereiten
+def playlist():
+	subprocess.call(["mpc", "stop"])
+	subprocess.call(["mpc", "clear"])
+	subprocess.call("mpc update --wait", shell=True)
+	subprocess.call("mpc ls | mpc add usb0", shell=True)
+	subprocess.call("mpc listall > /home/pi/playlists/usbliste.m3u", shell=True)
 
 # Optionsmenue anzeigen
 def Optionsmenue():
@@ -884,31 +904,43 @@ while (abbruch == 0):
 				#
 				
 				if (auswahl_menu == 0):
-					if (usbmodus == 0):
+					if ((usbmodus == 0) or (programmodus == 1)):
 						# MPC vorbereiten
-						subprocess.call(["mpc", "stop"])
-						subprocess.call(["mpc", "clear"])
-						subprocess.call("mpc update --wait", shell=True)
-						subprocess.call("mpc ls | mpc add usb0", shell=True)
-						subprocess.call("mpc listall > /home/pi/playlists/usbliste.m3u", shell=True)
-						# Eintraege aud Datei holen
+						playlist()
+						# Eintraege aus Datei holen
 						# Variable - USB - Liste leeren
-						usbliste = []
 						Usbnamen(usbliste)
 						print (anzahl_mp3)
 						print (usbliste)
 						# Wenn keine Dateien auf USB-Stick gefunden wurden
 						if (anzahl_mp3 == 0):
+							nousb()
 							display_erase()
-							lcd_byte(DISPLAY_LINE_3, DISPLAY_CMD)
-							lcd_string("Kein USB-Stick, oder")
-							lcd_byte(DISPLAY_LINE_4, DISPLAY_CMD)
-							lcd_string("   keine Dateien !  ")
-							time.sleep(1)
+						# Wenn Daten gefunden, dann erste Menuezeile anzeigen
+						elif (anzahl_mp3 > 0):
+							display_erase()
+							lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
+							lcd_string("  "+chr(0)+"    "+chr(1)+"    "+chr(2)+"    "+chr(6))
+					# Playlist auf die programmierten Stuecke kuerzen
+					if (programmodus == 1):
+						# Playlist fuer mpc loeschen
+						subprocess.call(["mpc", "clear"])
+						# Temporaere USB-Liste von Programm erstellen
+						usbliste_temp = []
+						for i in range(1,(anzahl_mp3)+1):
+							print (i)
+							if (programm.count(i) == 1):
+								usbliste_temp.append(usbliste[(i-1)])
+								print (" ---"+str(i))
+								subprocess.call(["mpc", "add", usbliste [i-1]])
+						# USB-Liste mit temoraeren USB-Liste ersetzen
+						usbliste = usbliste_temp
+						print (usbliste)
+						anzahl_mp3 = (len(programm))
+						print (anzahl_mp3)
+						subprocess.call(["mpc", "playlist"])
+						auswahl2 = 1	
 					# Auswahl USB Modus
-					display_erase()
-					lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
-					lcd_string("  "+chr(0)+"    "+chr(1)+"    "+chr(2)+"    "+chr(6))
 					while ((abbruch3 == 0) and (anzahl_mp3 > 0)):
 						if ((timer == 1) and (laufzeit <= (int(time.time())))):
 							Herunterfahren()
@@ -917,14 +949,14 @@ while (abbruch == 0):
 						lcd_string("USB - Stick ("+str(auswahl2)+")")
 						lcd_byte(DISPLAY_LINE_3, DISPLAY_CMD)
 						lcd_string((usbliste[((auswahl2)-1)])[5:])
-						# Sender ausgeben
+						# Stuecke ausgeben
 						f = subprocess.Popen(["mpc", "current"], stdout=subprocess.PIPE)
 						station = ""
 						station += str((f.stdout.read()).decode(encoding='UTF-8'))
 						# Ursprüngliche Laenge station
 						laenge_ursprung = len(station)
-						# Letztes Zeichen loeschen
-						station = station[:-1]
+						# Letztes Zeichen loeschen und erste 4 Zeichen "usb/" loeschen
+						station = station[5:-1]
 						# 20 Leerzeichen an station anhaengen
 						station = station + "                    "
 						laenge = len(station)
@@ -976,6 +1008,16 @@ while (abbruch == 0):
 							time.sleep(0.01)
 						elif (taste4 == 1):
 							print ("Eingang 4")
+							# Urspruengliche USB-Listen wieder einlesen
+							if (programmodus == 1):
+								# MPC vorbereiten
+								playlist()
+								# Eintraege aus Datei holen
+								# Variable - USB - Liste leeren
+								usbliste = []
+								Usbnamen(usbliste)
+								print (anzahl_mp3)
+								print (usbliste)
 							taste4 = 0   #Taste zuruecksetzen
 							time.sleep(0.01)
 							abbruch3 = 1
@@ -1015,18 +1057,104 @@ while (abbruch == 0):
 							if (auswahl4 == 1):
 								if (shufflemodus == 0):
 									shufflemodus = 1
-								elif(shufflemodus == 1):
+								elif (shufflemodus == 1):
 									shufflemodus = 0
 							# Repeat
 							if (auswahl4 == 2):
 								if (repeatmodus == 0):
 									repeatmodus = 1
-								elif(repeatmodus == 1):
+								elif (repeatmodus == 1):
 									repeatmodus = 2
-								elif(repeatmodus == 2):
+								elif (repeatmodus == 2):
 									repeatmodus = 0
+							# Programm
+							taste2 = 0	#Taste zuruecksetzen
+							if (auswahl4 == 3):
+								if (usbmodus == 0):
+									# MPC vorbereiten
+									playlist()
+									# Eintraege aus Datei holen
+									# Variable - USB - Liste leeren
+									usbliste = []
+									Usbnamen(usbliste)
+									print (anzahl_mp3)
+									print (usbliste)
+								# Wenn keine Dateien auf USB-Stick gefunden wurden
+								if (anzahl_mp3 == 0):
+									nousb()
+									taste2 = 0   # Taste zuruecksetzen
+									time.sleep(0.01)
+								# Auswahl USB Programm
+								if (len(programm) == 0):
+									lcd_byte(DISPLAY_LINE_4, DISPLAY_CMD)
+									lcd_string("                    ")
+								elif (len(programm) > 0):
+									lcd_byte(DISPLAY_LINE_4, DISPLAY_CMD)
+									lcd_string("Programmiert : "+str(len(programm)))
+								while ((abbruch6 == 0) and (anzahl_mp3 > 0)):
+									if ((timer == 1) and (laufzeit <= (int(time.time())))):
+										Herunterfahren()
+									# Auswahl anzeigen
+									lcd_byte(DISPLAY_LINE_2, DISPLAY_CMD)
+									lcd_string("USB - Auswahl ("+str(auswahl2)+")")
+									if (auswahl2 > 0):
+										lcd_byte(DISPLAY_LINE_3, DISPLAY_CMD)
+										lcd_string((usbliste[((auswahl2)-1)])[5:])
+									elif (auswahl2 == 0):
+										lcd_byte(DISPLAY_LINE_3, DISPLAY_CMD)
+										lcd_string("Programm ausschalten")
+									# Taster auswerten
+									if (taste1 == 1):
+										print ("Eingang 2")
+										auswahl2=auswahl2-1
+										# Wenn MP3-Anfang erreicht ist, wieder auf MP3-Ende springen
+										if (auswahl2 == -1):
+											auswahl2 = anzahl_mp3
+										taste1 = 0   #Taste zuruecksetzen
+										time.sleep(0.01)
+									elif (taste2 == 1):
+										# USB Stueck waehlen									
+										print ("Eingang 1")
+										# Wenn "Programm ausschalten" aktiviert ist
+										if (auswahl2 == 0):
+											programm = []
+											lcd_byte(DISPLAY_LINE_4, DISPLAY_CMD)
+											lcd_string("Programmiert : 0    ")
+											usbmodus = 0
+											programmodus = 0
+											auswahl2 = 1
+										# USB Stueck zu programm hinzufügen
+										elif (auswahl2 > 0):
+											# Nur hinzufuegen, wenn Nummer noch nicht vorhanden
+											if (programm.count(auswahl2) == 0):
+												programm.append (auswahl2)
+											print (programm)
+											lcd_byte(DISPLAY_LINE_4, DISPLAY_CMD)
+											lcd_string("Programmiert : "+str(len(programm)))
+											usbmodus = 1
+											programmodus = 1
+										taste2 = 0   #Taste zuruecksetzen
+										time.sleep(0.01)						
+									elif (taste3 == 1):
+										print ("Eingang 3")
+										auswahl2=auswahl2+1
+										# Wenn MP3-Ende erreicht ist, wieder auf MP3-Anfang springen
+										if (auswahl2 == (anzahl_mp3+1)):
+											auswahl2 = 0
+										taste3 = 0   # Taste zuruecksetzen
+										time.sleep(0.01)
+									elif (taste4 == 1):
+										print ("Eingang 4")
+										taste4 = 0   #Taste zuruecksetzen
+										time.sleep(0.01)	
+										abbruch6 = 1
+								abbruch6 = 0		
+							# Menue auf LCD anzeigen
+							display_erase()
+							lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
+							lcd_string("  "+chr(5)+"    "+chr(7)+"    "+chr(4)+"    "+chr(6))
 							statususb()
-							taste2 = 0   # Taste zuruecksetzen
+							taste2 = 0   #Taste zuruecksetzen
 							time.sleep(0.01)
 						elif (taste3 == 1):
 							print ("Eingang 3")
@@ -1073,8 +1201,8 @@ while (abbruch == 0):
 				if (usbmodus == 1):
 					subprocess.call(["mpc", "stop"])
 					subprocess.call(["mpc", "clear"])
-					subprocess.call(["mpc", "load", "radiosender"])
-					usbmodus = 0				
+					usbmodus = 0
+				subprocess.call(["mpc", "load", "radiosender"])				
 				# Menue zuruecksetzen
 				display_erase()
 				lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
