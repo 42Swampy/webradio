@@ -904,23 +904,23 @@ while (abbruch == 0):
 				#
 				
 				if (auswahl_menu == 0):
-					if ((usbmodus == 0) or (programmodus == 1)):
-						# MPC vorbereiten
-						playlist()
-						# Eintraege aus Datei holen
-						# Variable - USB - Liste leeren
-						Usbnamen(usbliste)
-						print (anzahl_mp3)
-						print (usbliste)
-						# Wenn keine Dateien auf USB-Stick gefunden wurden
-						if (anzahl_mp3 == 0):
-							nousb()
-							display_erase()
-						# Wenn Daten gefunden, dann erste Menuezeile anzeigen
-						elif (anzahl_mp3 > 0):
-							display_erase()
-							lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
-							lcd_string("  "+chr(0)+"    "+chr(1)+"    "+chr(2)+"    "+chr(6))
+					# MPC vorbereiten
+					playlist()
+					# Eintraege aus Datei holen
+					# Variable - USB - Liste leeren
+					usbliste = []
+					Usbnamen(usbliste)
+					print (anzahl_mp3)
+					print (usbliste)
+					# Wenn keine Dateien auf USB-Stick gefunden wurden
+					if (anzahl_mp3 == 0):
+						nousb()
+						display_erase()
+					# Wenn Daten gefunden, dann erste Menuezeile anzeigen
+					if (anzahl_mp3 > 0):
+						display_erase()
+						lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
+						lcd_string("  "+chr(0)+"    "+chr(1)+"    "+chr(2)+"    "+chr(6))
 					# Playlist auf die programmierten Stuecke kuerzen
 					if (programmodus == 1):
 						# Playlist fuer mpc loeschen
@@ -1008,16 +1008,6 @@ while (abbruch == 0):
 							time.sleep(0.01)
 						elif (taste4 == 1):
 							print ("Eingang 4")
-							# Urspruengliche USB-Listen wieder einlesen
-							if (programmodus == 1):
-								# MPC vorbereiten
-								playlist()
-								# Eintraege aus Datei holen
-								# Variable - USB - Liste leeren
-								usbliste = []
-								Usbnamen(usbliste)
-								print (anzahl_mp3)
-								print (usbliste)
 							taste4 = 0   #Taste zuruecksetzen
 							time.sleep(0.01)
 							abbruch3 = 1
@@ -1070,15 +1060,14 @@ while (abbruch == 0):
 							# Programm
 							taste2 = 0	#Taste zuruecksetzen
 							if (auswahl4 == 3):
-								if (usbmodus == 0):
-									# MPC vorbereiten
-									playlist()
-									# Eintraege aus Datei holen
-									# Variable - USB - Liste leeren
-									usbliste = []
-									Usbnamen(usbliste)
-									print (anzahl_mp3)
-									print (usbliste)
+								# MPC vorbereiten
+								playlist()
+								# Eintraege aus Datei holen
+								# Variable - USB - Liste leeren
+								usbliste = []
+								Usbnamen(usbliste)
+								print (anzahl_mp3)
+								print (usbliste)
 								# Wenn keine Dateien auf USB-Stick gefunden wurden
 								if (anzahl_mp3 == 0):
 									nousb()
