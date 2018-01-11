@@ -424,11 +424,21 @@ def stop_bluetooth():
 	# Bluetooth stoppen
 	stop_aplay.terminate()
 	
-# Gruene LED anschalten (alle anderen aus)
+# LED-Farbe anschalten (alle anderen aus)
 def led_gruen():
 	IO.output(ausgang1, IO.HIGH)
 	IO.output(ausgang2, IO.LOW)
 	IO.output(ausgang3, IO.LOW)
+
+def led_blau():
+	IO.output(ausgang1, IO.LOW)
+	IO.output(ausgang2, IO.HIGH)
+	IO.output(ausgang3, IO.LOW)
+	
+def led_rot():
+	IO.output(ausgang1, IO.LOW)
+	IO.output(ausgang2, IO.LOW)
+	IO.output(ausgang3, IO.HIGH)
 
 #
 # Starten
@@ -749,8 +759,11 @@ while (abbruch == 0):
 						time.sleep(0.1)
 					# Alles wieder zuruecksetzen
 					IO.output(ausgang4, IO.HIGH)
+					
 					if (bluetooth == 1):
 						IO.output(ausgang2, IO.HIGH)
+					elif (usbmodus == 1):
+						IO.output(ausgang3, IO.HIGH)
 					else:
 						IO.output(ausgang1, IO.HIGH)
 					taste1=0
@@ -988,8 +1001,8 @@ while (abbruch == 0):
 					# Falls Bluetooth-Modus an
 					if (bluetooth == 1):
 						stop_bluetooth()
-						# Gruene LED einschalten
-						led_gruen()
+					# Rote LED einschalten
+					led_rot()
 					# MPC vorbereiten
 					playlist()
 					# Eintraege aus Datei holen
@@ -1058,6 +1071,7 @@ while (abbruch == 0):
 						if (taste1 == 1):
 							# USB Modus einschalten
 							usbmodus = 1
+							led_rot()
 							print ("Eingang 1")
 							# Auswertung shuffle, repeat und program
 							#
@@ -1207,6 +1221,7 @@ while (abbruch == 0):
 											lcd_byte(DISPLAY_LINE_4, DISPLAY_CMD)
 											lcd_string("Programmiert : "+str(len(programm)))
 											usbmodus = 1
+											led_rot()
 											programmodus = 1
 										taste2 = 0   #Taste zuruecksetzen
 										time.sleep(0.01)						
@@ -1276,6 +1291,7 @@ while (abbruch == 0):
 					subprocess.call(["mpc", "stop"])
 					subprocess.call(["mpc", "clear"])
 					usbmodus = 0
+					led_gruen()
 				subprocess.call(["mpc", "load", "radiosender"])
 				# Falls Bluetooth-Modus an
 				if (bluetooth == 1):
