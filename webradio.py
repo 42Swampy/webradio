@@ -287,6 +287,7 @@ def nousb():
 	lcd_byte(DISPLAY_LINE_4, DISPLAY_CMD)
 	lcd_string("   keine Dateien !  ")
 	time.sleep(1)
+	led_gruen()
 	
 # RSS-Feed - Datei einlesen
 def rssnamen(feedliste):
@@ -356,7 +357,7 @@ def statususb():
 			lcd_byte(DISPLAY_LINE_4, DISPLAY_CMD)
 			lcd_string(chr(0)+" Programm (an)")
 			
-# Playlist vorbereiten
+# Playlist USB-Modus vorbereiten
 def playlist():
 	subprocess.call(["mpc", "stop"])
 	subprocess.call(["mpc", "clear"])
@@ -477,9 +478,7 @@ time.sleep(1)
 print ("Webradio bereit")
 
 # LED einschalten
-IO.output(ausgang1, IO.HIGH)
-IO.output(ausgang2, IO.LOW)
-IO.output(ausgang3, IO.LOW)
+led_gruen()
 
 # Stationen aus Playlist uebergeben
 Stationsnamen(stationsliste)
@@ -653,27 +652,21 @@ while (abbruch == 0):
 					lcd_string("LED Test 1 (Grün):")
 					lcd_byte(DISPLAY_LINE_2, DISPLAY_CMD)
 					lcd_string("--------------------")
-					IO.output(ausgang1, IO.HIGH)
-					IO.output(ausgang2, IO.LOW)
-					IO.output(ausgang3, IO.LOW)
+					led_gruen()
 					time.sleep(1.50)
 					display_erase()
 					lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
 					lcd_string("LED Test 2 (Blau):")
 					lcd_byte(DISPLAY_LINE_2, DISPLAY_CMD)
 					lcd_string("--------------------")
-					IO.output(ausgang1, IO.LOW)
-					IO.output(ausgang2, IO.HIGH)
-					IO.output(ausgang3, IO.LOW)
+					led_blau()
 					time.sleep(1.50)
 					display_erase()
 					lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
 					lcd_string("LED Test 3 (Rot):")
 					lcd_byte(DISPLAY_LINE_2, DISPLAY_CMD)
 					lcd_string("--------------------")
-					IO.output(ausgang1, IO.LOW)
-					IO.output(ausgang2, IO.LOW)
-					IO.output(ausgang3, IO.HIGH)
+					led_rot()
 					time.sleep(1.50)
 					# Optionsmenue wieder herstellen
 					display_erase()
@@ -681,9 +674,7 @@ while (abbruch == 0):
 					lcd_string("  "+chr(5)+"    "+chr(7)+"    "+chr(4)+"    "+chr(6))
 					# Altes Menue anzeigen
 					Optionsmenue()
-					IO.output(ausgang1, IO.HIGH)
-					IO.output(ausgang2, IO.LOW)
-					IO.output(ausgang3, IO.LOW)
+					led_gruen()
 					
 				#
 				# Bluetooth
@@ -713,15 +704,11 @@ while (abbruch == 0):
 								lcd_string("   Bluetooth (aus)  ")
 								stop_bluetooth()
 								# Gruene LED einschalten
-								IO.output(ausgang1, IO.HIGH)
-								IO.output(ausgang2, IO.LOW)
-								IO.output(ausgang3, IO.LOW)
+								led_gruen()
 							else:
 								bluetooth = 1
 								# Blaue LED einschalten
-								IO.output(ausgang1, IO.LOW)
-								IO.output(ausgang2, IO.HIGH)
-								IO.output(ausgang3, IO.LOW)
+								led_blau()
 								lcd_byte(DISPLAY_LINE_3, DISPLAY_CMD)
 								lcd_string("   Bluetooth (an)  ")
 								# Bluetooth starten
@@ -761,11 +748,11 @@ while (abbruch == 0):
 					IO.output(ausgang4, IO.HIGH)
 					
 					if (bluetooth == 1):
-						IO.output(ausgang2, IO.HIGH)
+						led_blau()
 					elif (usbmodus == 1):
-						IO.output(ausgang3, IO.HIGH)
+						led_rot()
 					else:
-						IO.output(ausgang1, IO.HIGH)
+						led_gruen()
 					taste1=0
 					taste2=0
 					taste3=0
@@ -958,20 +945,13 @@ while (abbruch == 0):
 							if (bluetooth == 1):
 								stop_bluetooth()
 							Herunterfahren()
-						elif (taste2 == 1):
-							# Keine Funktion
-							print ("Eingang 2")
-							taste2 = 0   #Taste zuruecksetzen
-							time.sleep(0.01)
-						elif (taste3 == 1):
-							# Keine Funktion
-							print ("Eingang 3")
-							taste3 = 0   # Taste zuruecksetzen
-							time.sleep(0.01)
 						elif (taste4 == 1):
 							# Abbruch Herunterfahren
 							print ("Eingang 4")
-							taste4 = 0   #Taste zuruecksetzen
+							#Tasten zuruecksetzen
+							taste2 = 0
+							taste3 = 0
+							taste4 = 0
 							abbruch4 = 1
 							time.sleep(0.01)
 					abbruch4 = 0
@@ -989,10 +969,9 @@ while (abbruch == 0):
 					# Falls Bluetooth-Modus an
 					if (bluetooth == 1):
 						stop_bluetooth()
-						# Gruene LED einschalten
-						led_gruen()
 					subprocess.call(["mpc", "stop"])
-					
+					# Gruene LED einschalten
+					led_gruen()
 				#
 				# USB Modus
 				#
@@ -1320,8 +1299,6 @@ display_erase()
 # Falls Bluetooth-Modus an
 if (bluetooth == 1):
 	stop_bluetooth()
-	IO.output(ausgang2, IO.LOW)
-IO.output(ausgang1, IO.LOW)
 
 # Debug-Modus
 print ("Debug-Modus")
