@@ -53,6 +53,7 @@ abbruch6 = 0
 anzahl_stationen = 0
 anzahl_mp3 = 0
 anzahl_feeds = 0
+anzahl_orte = 0
 bluetooth = 0
 radiomodus = 1
 usbmodus = 0
@@ -62,11 +63,13 @@ repeatmodus = 0
 programmodus = 0
 programm = []
 ganzer_feed = " "
+wetterkommando = " "
 feedliste = []
+ortsliste = []
 stationsliste = []
 usbliste = []
 usbliste_temp = []
-menuliste = ["USB-Stick","Selbsttest","Debug-Modus","Herunterfahren","Wiedegabe anhalten","Nachtmodus","RSS-Feeds","Uhr/Timer","Bluetooth","Modus USB"]
+menuliste = ["USB-Stick","Selbsttest","Debug-Modus","Herunterfahren","Wiedegabe anhalten","Nachtmodus","RSS-Feeds","Uhr/Timer","Wetter","Bluetooth","Modus USB"]
 zeiteinstellung = 0
 timer = 0
 
@@ -165,7 +168,7 @@ def kill_umlauts(message):
 	except:
 		return message;
 	return message
-
+	
 def lcd_string(message):
 	message = kill_umlauts(message)
 	message = message.ljust(DISPLAY_WIDTH," ")  
@@ -304,6 +307,22 @@ def rssnamen(feedliste):
 		laenge_zeile = len (allezeilen[zeile])
 		feedliste.append((allezeilen[zeile])[0:(laenge_zeile-1)])
 	return feedliste
+	
+# Ortsnamen (Wetter) - Datei einlesen
+def ortsnamen(ortsliste):
+	# Datei zum Lesen oeffnen
+	d = open("/home/pi/playlists/wetter_orte.m3u","r")
+	# Einlesen der Zeilen in der Datei
+	allezeilen = d.readlines()
+	# Schließen der Datei
+	d.close()
+	# Anzahl der Ortsnamen (Ueberfluessige Zeilen abgezogen)
+	global anzahl_orte
+	anzahl_orte = (int(len(allezeilen)))
+	for zeile in range(0,(anzahl_orte)):
+		laenge_zeile = len (allezeilen[zeile])
+		ortsliste.append((allezeilen[zeile])[0:(laenge_zeile-1)])
+	return ortsliste
 
 # Status Menue USB - Shuffle, Repeat und Programm
 def statususb():
@@ -680,7 +699,7 @@ while (abbruch == 0):
 				# Bluetooth
 				#
 				
-				if (auswahl_menu == 8):
+				if (auswahl_menu == 9):
 					subprocess.call(["mpc", "stop"])
 					display_erase()
 					lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
@@ -912,6 +931,7 @@ while (abbruch == 0):
 						elif (taste4 == 1):
 							# RSS - Menue beenden
 							print ("Eingang 4")
+							feedliste = []	#Feedliste wieder leeren
 							taste4 = 0   #Taste zuruecksetzen
 							abbruch5 = 1
 							time.sleep(0.01)
@@ -1103,7 +1123,7 @@ while (abbruch == 0):
 				# USB Optionen
 				#
 				
-				if (auswahl_menu == 9):
+				if (auswahl_menu == 10):
 					# Menue auf LCD anzeigen
 					display_erase()
 					lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
@@ -1246,7 +1266,94 @@ while (abbruch == 0):
 					lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
 					lcd_string("  "+chr(5)+"    "+chr(7)+"    "+chr(4)+"    "+chr(6))
 					# Altes Menue anzeigen
-					Optionsmenue()						
+					Optionsmenue()
+				
+				#
+				# Wettervorhersage
+				#
+				
+				if (auswahl_menu == 8):
+					# Menue auf LCD anzeigen
+					display_erase()
+					lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
+					lcd_string("  "+chr(0)+"    "+chr(1)+"    "+chr(2)+"    "+chr(6))
+					# Ortsnamen aus Datei einlesen
+					ortsnamen(ortsliste)
+					print (anzahl_orte)
+					print (ortsliste)
+					while (abbruch5 == 0):
+						if ((timer == 1) and (laufzeit <= (int(time.time())))):
+							Herunterfahren()
+						# Auswahl anzeigen
+						lcd_byte(DISPLAY_LINE_2, DISPLAY_CMD)
+						lcd_string("Wetter ("+str(auswahl3)+")")
+						lcd_byte(DISPLAY_LINE_3, DISPLAY_CMD)
+						lcd_string(ortsliste[(auswahl3-1)])
+						# Taster auswerten						
+						if (taste1 == 1):
+							print ("Eingang 1")
+							taste1 = 0   #Taste zuruecksetzen						
+							time.sleep(0.01)
+							lcd_byte(DISPLAY_LINE_4, DISPLAY_CMD)
+							lcd_string("* Hole Wetterdaten *")
+							# Kommandozeilenbefehl Aktuelles Wetter erstellen
+							wetterkommando = "ansiweather -l " + ortsliste[auswahl3-1] + ",DE -a false"
+							# Aktuelles Wetter ausgeben
+							f = subprocess.Popen(wetterkommando,shell=True,stdout=subprocess.PIPE)
+							station = ""
+							station += str((f.stdout.read()).decode(encoding='UTF-8'))[:-1]
+							# Kommandozeilenbefehl Wetter Vorhersage erstellen
+							wetterkommando = "ansiweather -l " + ortsliste[auswahl3-1] + ",DE -a false -F"
+							# Aktuelles Wetter ausgeben
+							f = subprocess.Popen(wetterkommando,shell=True,stdout=subprocess.PIPE)
+							station = station + " / "
+							station += str((f.stdout.read()).decode(encoding='UTF-8'))[:-1]
+							# Ursprüngliche Laenge station
+							laenge_ursprung = len(station)
+							# Letztes Zeichen loeschen
+							station = station[:-1]
+							# 20 Leerzeichen an station anhaengen
+							station = station + "                    "
+							station = station.replace("forecast","Vorhersage")
+							laenge = len(station)
+							bereich = laenge - 19
+							print (bereich)
+							print (station)
+							laufschrift(bereich)						
+						elif (taste2 == 1):
+							# RSS - Ort erhoehen
+							print ("Eingang 2")
+							auswahl3=auswahl3-1
+							# Wenn Ortanfang erreicht ist, wieder auf ende springen
+							if (auswahl3 == 0):
+								auswahl3 = anzahl_orte
+								print (auswahl3)
+							taste2 = 0   # Taste zuruecksetzen
+							time.sleep(0.01)
+						elif (taste3 == 1):
+							# RSS - Ort erniedrigen
+							print ("Eingang 3")
+							auswahl3=auswahl3+1
+							# Wenn Ortende erreicht ist, wieder auf Ortanfang springen
+							if (auswahl3 == (anzahl_orte+1)):
+								auswahl3 = 1
+								print (auswahl3)
+							taste3 = 0   #Taste zuruecksetzen
+							time.sleep(0.01)
+						elif (taste4 == 1):
+							# RSS - Menue beenden
+							print ("Eingang 4")
+							ortsliste = []	#Ortsliste wieder leeren
+							taste4 = 0   #Taste zuruecksetzen
+							abbruch5 = 1
+							time.sleep(0.01)
+					abbruch5 = 0
+					# Optionsmenue anzeigen
+					display_erase()
+					lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
+					lcd_string("  "+chr(5)+"    "+chr(7)+"    "+chr(4)+"    "+chr(6))
+					Optionsmenue()
+									
 			# Im Optionsmenue eins rauf gehen
 			elif (taste3 == 1):
 				print ("Eingang 3")
@@ -1282,6 +1389,7 @@ while (abbruch == 0):
 				lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
 				lcd_string("  "+chr(0)+"    "+chr(1)+"    "+chr(2)+"    "+chr(3))
 				time.sleep(0.01)
+
 # mpd beenden
 subprocess.call(["mpc", "stop"])
 

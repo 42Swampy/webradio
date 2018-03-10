@@ -17,10 +17,10 @@ IO.setwarnings(False)
 IO.setmode(IO.BCM)
 
 # Deklarieren der Variabeln GPIO-Ports
-ausgang1 = 15
-ausgang2 = 11
-ausgang3 = 3
-ausgang4 = 9
+ausgang1 = 15 # Gruen
+ausgang2 = 11 # Blau
+ausgang3 = 3  # Rot
+ausgang4 = 9  # Displaybeleuchtung
 eingang1 = 10
 eingang2 = 22
 eingang3 = 27
@@ -35,9 +35,6 @@ DISPLAY_DATA6 = 23
 DISPLAY_DATA7 = 18
 
 # Deklarieren der Variabeln Sonstige Variablen
-led1 = 0 # Gruen
-led2 = 0 # Blau
-led3 = 0 # Rot
 taste1 = 0
 taste2 = 0
 taste3 = 0
@@ -56,6 +53,8 @@ abbruch6 = 0
 anzahl_stationen = 0
 anzahl_mp3 = 0
 anzahl_feeds = 0
+anzahl_orte = 0
+bluetooth = 0
 radiomodus = 1
 usbmodus = 0
 laufzeit = 0
@@ -64,11 +63,13 @@ repeatmodus = 0
 programmodus = 0
 programm = []
 ganzer_feed = " "
+wetterkommando = " "
 feedliste = []
+ortsliste = []
 stationsliste = []
 usbliste = []
 usbliste_temp = []
-menuliste = ["USB-Stick","Selbsttest","Debug-Modus","Herunterfahren","Wiedegabe anhalten","Nachtmodus","RSS-Feeds","Uhr/Timer","Modus USB"]
+menuliste = ["USB-Stick","Selbsttest","Debug-Modus","Herunterfahren","Wiedegabe anhalten","Nachtmodus","RSS-Feeds","Uhr/Timer","Wetter","Bluetooth","Modus USB"]
 zeiteinstellung = 0
 timer = 0
 
@@ -167,7 +168,7 @@ def kill_umlauts(message):
 	except:
 		return message;
 	return message
-
+	
 def lcd_string(message):
 	message = kill_umlauts(message)
 	message = message.ljust(DISPLAY_WIDTH," ")  
@@ -289,6 +290,7 @@ def nousb():
 	lcd_byte(DISPLAY_LINE_4, DISPLAY_CMD)
 	lcd_string("   keine Dateien !  ")
 	time.sleep(1)
+	led_gruen()
 	
 # RSS-Feed - Datei einlesen
 def rssnamen(feedliste):
@@ -305,6 +307,22 @@ def rssnamen(feedliste):
 		laenge_zeile = len (allezeilen[zeile])
 		feedliste.append((allezeilen[zeile])[0:(laenge_zeile-1)])
 	return feedliste
+	
+# Ortsnamen (Wetter) - Datei einlesen
+def ortsnamen(ortsliste):
+	# Datei zum Lesen oeffnen
+	d = open("/home/pi/playlists/wetter_orte.m3u","r")
+	# Einlesen der Zeilen in der Datei
+	allezeilen = d.readlines()
+	# Schließen der Datei
+	d.close()
+	# Anzahl der Ortsnamen (Ueberfluessige Zeilen abgezogen)
+	global anzahl_orte
+	anzahl_orte = (int(len(allezeilen)))
+	for zeile in range(0,(anzahl_orte)):
+		laenge_zeile = len (allezeilen[zeile])
+		ortsliste.append((allezeilen[zeile])[0:(laenge_zeile-1)])
+	return ortsliste
 
 # Status Menue USB - Shuffle, Repeat und Programm
 def statususb():
@@ -358,7 +376,7 @@ def statususb():
 			lcd_byte(DISPLAY_LINE_4, DISPLAY_CMD)
 			lcd_string(chr(0)+" Programm (an)")
 			
-# Playlist vorbereiten
+# Playlist USB-Modus vorbereiten
 def playlist():
 	subprocess.call(["mpc", "stop"])
 	subprocess.call(["mpc", "clear"])
@@ -418,6 +436,29 @@ def Herunterfahren():
 	print ("Fahre System herunter")
 	subprocess.call(["sudo", "halt"])
 	time.sleep(10)
+	
+# Bluetooth stoppen
+def stop_bluetooth():
+	global bluetooth
+	bluetooth = 0
+	# Bluetooth stoppen
+	stop_aplay.terminate()
+	
+# LED-Farbe anschalten (alle anderen aus)
+def led_gruen():
+	IO.output(ausgang1, IO.HIGH)
+	IO.output(ausgang2, IO.LOW)
+	IO.output(ausgang3, IO.LOW)
+
+def led_blau():
+	IO.output(ausgang1, IO.LOW)
+	IO.output(ausgang2, IO.HIGH)
+	IO.output(ausgang3, IO.LOW)
+	
+def led_rot():
+	IO.output(ausgang1, IO.LOW)
+	IO.output(ausgang2, IO.LOW)
+	IO.output(ausgang3, IO.HIGH)
 
 #
 # Starten
@@ -456,9 +497,7 @@ time.sleep(1)
 print ("Webradio bereit")
 
 # LED einschalten
-IO.output(ausgang1, IO.HIGH)
-IO.output(ausgang2, IO.LOW)
-IO.output(ausgang3, IO.LOW)
+led_gruen()
 
 # Stationen aus Playlist uebergeben
 Stationsnamen(stationsliste)
@@ -590,6 +629,9 @@ while (abbruch == 0):
 				#
 				
 				if (auswahl_menu == 1):
+					# Falls Bluetooth-Modus an
+					if (bluetooth == 1):
+						stop_bluetooth()
 					# Alles ausschalten
 					display_erase()
 					IO.output(ausgang1, IO.LOW)
@@ -629,27 +671,21 @@ while (abbruch == 0):
 					lcd_string("LED Test 1 (Grün):")
 					lcd_byte(DISPLAY_LINE_2, DISPLAY_CMD)
 					lcd_string("--------------------")
-					IO.output(ausgang1, IO.HIGH)
-					IO.output(ausgang2, IO.LOW)
-					IO.output(ausgang3, IO.LOW)
+					led_gruen()
 					time.sleep(1.50)
 					display_erase()
 					lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
 					lcd_string("LED Test 2 (Blau):")
 					lcd_byte(DISPLAY_LINE_2, DISPLAY_CMD)
 					lcd_string("--------------------")
-					IO.output(ausgang1, IO.LOW)
-					IO.output(ausgang2, IO.HIGH)
-					IO.output(ausgang3, IO.LOW)
+					led_blau()
 					time.sleep(1.50)
 					display_erase()
 					lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
 					lcd_string("LED Test 3 (Rot):")
 					lcd_byte(DISPLAY_LINE_2, DISPLAY_CMD)
 					lcd_string("--------------------")
-					IO.output(ausgang1, IO.LOW)
-					IO.output(ausgang2, IO.LOW)
-					IO.output(ausgang3, IO.HIGH)
+					led_rot()
 					time.sleep(1.50)
 					# Optionsmenue wieder herstellen
 					display_erase()
@@ -657,10 +693,61 @@ while (abbruch == 0):
 					lcd_string("  "+chr(5)+"    "+chr(7)+"    "+chr(4)+"    "+chr(6))
 					# Altes Menue anzeigen
 					Optionsmenue()
-					IO.output(ausgang1, IO.HIGH)
-					IO.output(ausgang2, IO.LOW)
-					IO.output(ausgang3, IO.LOW)
+					led_gruen()
 					
+				#
+				# Bluetooth
+				#
+				
+				if (auswahl_menu == 9):
+					subprocess.call(["mpc", "stop"])
+					display_erase()
+					lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
+					lcd_string("  "+chr(7)+"              "+chr(6))
+					lcd_byte(DISPLAY_LINE_2, DISPLAY_CMD)
+					lcd_string("                    ")
+					# Bluetooth Status erkennen
+					if (bluetooth == 0):
+						lcd_byte(DISPLAY_LINE_3, DISPLAY_CMD)
+						lcd_string("   Bluetooth (aus)  ")
+					elif (bluetooth == 1):
+						lcd_byte(DISPLAY_LINE_3, DISPLAY_CMD)
+						lcd_string("   Bluetooth (an)   ")
+					lcd_byte(DISPLAY_LINE_4, DISPLAY_CMD)
+					lcd_string("                    ")
+					# Menue auswerten
+					while (taste4 == 0):
+						if (taste1 == 1):
+							if (bluetooth == 1):
+								lcd_byte(DISPLAY_LINE_3, DISPLAY_CMD)
+								lcd_string("   Bluetooth (aus)  ")
+								stop_bluetooth()
+								# Gruene LED einschalten
+								led_gruen()
+							else:
+								bluetooth = 1
+								# Blaue LED einschalten
+								led_blau()
+								lcd_byte(DISPLAY_LINE_3, DISPLAY_CMD)
+								lcd_string("   Bluetooth (an)  ")
+								# Bluetooth starten
+								stop_aplay=subprocess.Popen(["bluealsa-aplay", "00:00:00:00:00:00"])
+							taste1 = 0
+						if ((timer == 1) and (laufzeit <= (int(time.time())))):
+							Herunterfahren()
+						time.sleep(0.1)
+					# Alles wieder zuruecksetzen
+					taste1 = 0
+					taste2 = 0
+					taste3 = 0
+					taste4 = 0
+					# Optionsmenue wieder herstellen
+					display_erase()
+					lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
+					lcd_string("  "+chr(5)+"    "+chr(7)+"    "+chr(4)+"    "+chr(6))
+					# Altes Menue anzeigen
+					Optionsmenue()
+				
 				#
 				# Nachtmodus
 				#
@@ -678,12 +765,17 @@ while (abbruch == 0):
 						time.sleep(0.1)
 					# Alles wieder zuruecksetzen
 					IO.output(ausgang4, IO.HIGH)
-					IO.output(ausgang1, IO.HIGH)
+					
+					if (bluetooth == 1):
+						led_blau()
+					elif (usbmodus == 1):
+						led_rot()
+					else:
+						led_gruen()
 					taste1=0
 					taste2=0
 					taste3=0
 					taste4=0
-					IO.output(ausgang3, IO.LOW)
 					
 				#
 				# Uhr/Timer
@@ -839,6 +931,7 @@ while (abbruch == 0):
 						elif (taste4 == 1):
 							# RSS - Menue beenden
 							print ("Eingang 4")
+							feedliste = []	#Feedliste wieder leeren
 							taste4 = 0   #Taste zuruecksetzen
 							abbruch5 = 1
 							time.sleep(0.01)
@@ -868,21 +961,17 @@ while (abbruch == 0):
 						lcd_string(" Sind Sie sicher ?  ")
 						# Taster auswerten
 						if (taste1 == 1):
+							# Falls Bluetooth-Modus an
+							if (bluetooth == 1):
+								stop_bluetooth()
 							Herunterfahren()
-						elif (taste2 == 1):
-							# Keine Funktion
-							print ("Eingang 2")
-							taste2 = 0   #Taste zuruecksetzen
-							time.sleep(0.01)
-						elif (taste3 == 1):
-							# Keine Funktion
-							print ("Eingang 3")
-							taste3 = 0   # Taste zuruecksetzen
-							time.sleep(0.01)
 						elif (taste4 == 1):
 							# Abbruch Herunterfahren
 							print ("Eingang 4")
-							taste4 = 0   #Taste zuruecksetzen
+							#Tasten zuruecksetzen
+							taste2 = 0
+							taste3 = 0
+							taste4 = 0
 							abbruch4 = 1
 							time.sleep(0.01)
 					abbruch4 = 0
@@ -897,13 +986,22 @@ while (abbruch == 0):
 				#
 				
 				if (auswahl_menu == 4):
+					# Falls Bluetooth-Modus an
+					if (bluetooth == 1):
+						stop_bluetooth()
 					subprocess.call(["mpc", "stop"])
-					
+					# Gruene LED einschalten
+					led_gruen()
 				#
 				# USB Modus
 				#
 				
 				if (auswahl_menu == 0):
+					# Falls Bluetooth-Modus an
+					if (bluetooth == 1):
+						stop_bluetooth()
+					# Rote LED einschalten
+					led_rot()
 					# MPC vorbereiten
 					playlist()
 					# Eintraege aus Datei holen
@@ -972,6 +1070,7 @@ while (abbruch == 0):
 						if (taste1 == 1):
 							# USB Modus einschalten
 							usbmodus = 1
+							led_rot()
 							print ("Eingang 1")
 							# Auswertung shuffle, repeat und program
 							#
@@ -1024,7 +1123,7 @@ while (abbruch == 0):
 				# USB Optionen
 				#
 				
-				if (auswahl_menu == 8):
+				if (auswahl_menu == 10):
 					# Menue auf LCD anzeigen
 					display_erase()
 					lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
@@ -1121,6 +1220,7 @@ while (abbruch == 0):
 											lcd_byte(DISPLAY_LINE_4, DISPLAY_CMD)
 											lcd_string("Programmiert : "+str(len(programm)))
 											usbmodus = 1
+											led_rot()
 											programmodus = 1
 										taste2 = 0   #Taste zuruecksetzen
 										time.sleep(0.01)						
@@ -1167,7 +1267,93 @@ while (abbruch == 0):
 					lcd_string("  "+chr(5)+"    "+chr(7)+"    "+chr(4)+"    "+chr(6))
 					# Altes Menue anzeigen
 					Optionsmenue()
-						
+				
+				#
+				# Wettervorhersage
+				#
+				
+				if (auswahl_menu == 8):
+					# Menue auf LCD anzeigen
+					display_erase()
+					lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
+					lcd_string("  "+chr(0)+"    "+chr(1)+"    "+chr(2)+"    "+chr(6))
+					# Ortsnamen aus Datei einlesen
+					ortsnamen(ortsliste)
+					print (anzahl_orte)
+					print (ortsliste)
+					while (abbruch5 == 0):
+						if ((timer == 1) and (laufzeit <= (int(time.time())))):
+							Herunterfahren()
+						# Auswahl anzeigen
+						lcd_byte(DISPLAY_LINE_2, DISPLAY_CMD)
+						lcd_string("Wetter ("+str(auswahl3)+")")
+						lcd_byte(DISPLAY_LINE_3, DISPLAY_CMD)
+						lcd_string(ortsliste[(auswahl3-1)])
+						# Taster auswerten						
+						if (taste1 == 1):
+							print ("Eingang 1")
+							taste1 = 0   #Taste zuruecksetzen						
+							time.sleep(0.01)
+							lcd_byte(DISPLAY_LINE_4, DISPLAY_CMD)
+							lcd_string("* Hole Wetterdaten *")
+							# Kommandozeilenbefehl Aktuelles Wetter erstellen
+							wetterkommando = "ansiweather -l " + ortsliste[auswahl3-1] + ",DE -a false"
+							# Aktuelles Wetter ausgeben
+							f = subprocess.Popen(wetterkommando,shell=True,stdout=subprocess.PIPE)
+							station = ""
+							station += str((f.stdout.read()).decode(encoding='UTF-8'))[:-1]
+							# Kommandozeilenbefehl Wetter Vorhersage erstellen
+							wetterkommando = "ansiweather -l " + ortsliste[auswahl3-1] + ",DE -a false -F"
+							# Aktuelles Wetter ausgeben
+							f = subprocess.Popen(wetterkommando,shell=True,stdout=subprocess.PIPE)
+							station = station + " / "
+							station += str((f.stdout.read()).decode(encoding='UTF-8'))[:-1]
+							# Ursprüngliche Laenge station
+							laenge_ursprung = len(station)
+							# Letztes Zeichen loeschen
+							station = station[:-1]
+							# 20 Leerzeichen an station anhaengen
+							station = station + "                    "
+							station = station.replace("forecast","Vorhersage")
+							laenge = len(station)
+							bereich = laenge - 19
+							print (bereich)
+							print (station)
+							laufschrift(bereich)						
+						elif (taste2 == 1):
+							# RSS - Ort erhoehen
+							print ("Eingang 2")
+							auswahl3=auswahl3-1
+							# Wenn Ortanfang erreicht ist, wieder auf ende springen
+							if (auswahl3 == 0):
+								auswahl3 = anzahl_orte
+								print (auswahl3)
+							taste2 = 0   # Taste zuruecksetzen
+							time.sleep(0.01)
+						elif (taste3 == 1):
+							# RSS - Ort erniedrigen
+							print ("Eingang 3")
+							auswahl3=auswahl3+1
+							# Wenn Ortende erreicht ist, wieder auf Ortanfang springen
+							if (auswahl3 == (anzahl_orte+1)):
+								auswahl3 = 1
+								print (auswahl3)
+							taste3 = 0   #Taste zuruecksetzen
+							time.sleep(0.01)
+						elif (taste4 == 1):
+							# RSS - Menue beenden
+							print ("Eingang 4")
+							ortsliste = []	#Ortsliste wieder leeren
+							taste4 = 0   #Taste zuruecksetzen
+							abbruch5 = 1
+							time.sleep(0.01)
+					abbruch5 = 0
+					# Optionsmenue anzeigen
+					display_erase()
+					lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
+					lcd_string("  "+chr(5)+"    "+chr(7)+"    "+chr(4)+"    "+chr(6))
+					Optionsmenue()
+									
 			# Im Optionsmenue eins rauf gehen
 			elif (taste3 == 1):
 				print ("Eingang 3")
@@ -1191,12 +1377,19 @@ while (abbruch == 0):
 					subprocess.call(["mpc", "stop"])
 					subprocess.call(["mpc", "clear"])
 					usbmodus = 0
-				subprocess.call(["mpc", "load", "radiosender"])				
+					led_gruen()
+				subprocess.call(["mpc", "load", "radiosender"])
+				# Falls Bluetooth-Modus an
+				if (bluetooth == 1):
+					stop_bluetooth()
+					# Gruene LED einschalten
+					led_gruen()	
 				# Menue zuruecksetzen
 				display_erase()
 				lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
 				lcd_string("  "+chr(0)+"    "+chr(1)+"    "+chr(2)+"    "+chr(3))
 				time.sleep(0.01)
+
 # mpd beenden
 subprocess.call(["mpc", "stop"])
 
@@ -1210,6 +1403,10 @@ IO.output(ausgang3, IO.LOW)
 
 # LCD-Anzeige loeschen
 display_erase()
+
+# Falls Bluetooth-Modus an
+if (bluetooth == 1):
+	stop_bluetooth()
 
 # Debug-Modus
 print ("Debug-Modus")

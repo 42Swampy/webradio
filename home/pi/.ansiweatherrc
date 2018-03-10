@@ -1,0 +1,19 @@
+# Uebersetzung
+greeting_text:Aktuelles Wetter in
+wind_text:Windgeschwindigkeit
+humidity_text:Luftfeuchtigkeit
+pressure_text:Luftdruck
+sunrise_text:Sonnenaufgang
+sunset_text:Sonnenuntergang
+wind_directions:N NNO NO ONO O OSO SO SSO S SSW SW WSW W WNW NW NNW
+
+# Text fuer Symbole
+sun:Sonne
+moon:Mond
+clouds:Wolken
+rain:Regen
+fog:dichter Nebel
+mist:Nebel
+haze:Dunst
+snow:Schnee
+thunderstorm:Gewitter
