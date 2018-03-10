@@ -16,6 +16,5 @@ _IP=$(hostname -I) || true
 if [ "$_IP" ]; then
   printf "My IP address is %s\n" "$_IP"
 fi
-
-python3 /home/pi/Python/webradio.py &
+su pi -c 'python3 /home/pi/Python/webradio.py &'
 exit 0
