@@ -1314,6 +1314,7 @@ while (abbruch == 0):
 							station = station[:-1]
 							# 20 Leerzeichen an station anhaengen
 							station = station + "                    "
+							# Weitere Uebersetzungen
 							station = station.replace("forecast","Vorhersage")
 							laenge = len(station)
 							bereich = laenge - 19
