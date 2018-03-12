@@ -1,3 +1,6 @@
+# Datumsformat
+dateformat:%a %d %b
+
 # Uebersetzung
 greeting_text:Aktuelles Wetter in
 wind_text:Windgeschwindigkeit
@@ -5,7 +8,10 @@ humidity_text:Luftfeuchtigkeit
 pressure_text:Luftdruck
 sunrise_text:Sonnenaufgang
 sunset_text:Sonnenuntergang
-wind_directions:N NNO NO ONO O OSO SO SSO S SSW SW WSW W WNW NW NNW
+
+# Funktioniert erst in spaeteren Versionen:
+# wind_directions:N NNO NO ONO O OSO SO SSO S SSW SW WSW W WNW NW NNW
+# forecast_text:Vorhersage
 
 # Text fuer Symbole
 sun:Sonne
