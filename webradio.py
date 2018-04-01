@@ -141,17 +141,6 @@ def display_init():
 	
 def kill_umlauts(message):
 	try:
-		message = message.replace('ä', chr(225))
-		message = message.replace('ö', chr(239))
-		message = message.replace('ü', chr(245))
-		message = message.replace('Ä', chr(225))
-		message = message.replace('Ö', chr(239))
-		message = message.replace('Ü', chr(245))
-		message = message.replace('ß', chr(226))
-		message = message.replace('°', chr(223))
-		message = message.replace('µ', chr(228))
-		message = message.replace('´', chr(96))
-		message = message.replace('€', chr(227))
 		message = message.replace('–', '-')
 		message = message.replace('“', '"')
 		message = message.replace('”', '"')
@@ -165,6 +154,17 @@ def kill_umlauts(message):
 		message = message.replace('à', 'a')
 		message = message.replace('â', 'a')
 		message = message.replace('©', '(c)')
+		message = message.replace('ä', chr(225))
+		message = message.replace('ö', chr(239))
+		message = message.replace('ü', chr(245))
+		message = message.replace('Ä', chr(225))
+		message = message.replace('Ö', chr(239))
+		message = message.replace('Ü', chr(245))
+		message = message.replace('ß', chr(226))
+		message = message.replace('°', chr(223))
+		message = message.replace('µ', chr(228))
+		message = message.replace('´', chr(96))
+		message = message.replace('€', chr(227))
 	except:
 		return message;
 	return message
