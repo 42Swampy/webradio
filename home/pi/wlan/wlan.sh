@@ -14,7 +14,7 @@ sudo apt-get install git
 cd ~
 if [ ! -d rtl8192su ] ; then
 echo " cloning rtl8192su.git"
-git clone https://github.com/chunkeey/rtl8192su.git
+git clone https://github.com/asig/rtl8192su.git
 else
 echo " rtl8192su repository already cloned"
 fi
