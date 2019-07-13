@@ -1297,13 +1297,13 @@ while (abbruch == 0):
 							lcd_byte(DISPLAY_LINE_4, DISPLAY_CMD)
 							lcd_string("* Hole Wetterdaten *")
 							# Kommandozeilenbefehl Aktuelles Wetter erstellen
-							wetterkommando = "ansiweather -l " + ortsliste[auswahl3-1] + ",DE -a false"
+							wetterkommando = "ansiweather -l " + ortsliste[auswahl3-1] + ",DE -a false -s true"
 							# Aktuelles Wetter ausgeben
 							f = subprocess.Popen(wetterkommando,shell=True,stdout=subprocess.PIPE)
 							station = ""
 							station += str((f.stdout.read()).decode(encoding='UTF-8'))[:-1]
 							# Kommandozeilenbefehl Wetter Vorhersage erstellen
-							wetterkommando = "ansiweather -l " + ortsliste[auswahl3-1] + ",DE -a false -F"
+							wetterkommando = "ansiweather -l " + ortsliste[auswahl3-1] + ",DE -a false -F -s true"
 							# Aktuelles Wetter ausgeben
 							f = subprocess.Popen(wetterkommando,shell=True,stdout=subprocess.PIPE)
 							station = station + " / "
