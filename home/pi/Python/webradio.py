@@ -34,6 +34,7 @@ DISPLAY_DATA5 = 24
 DISPLAY_DATA6 = 23
 DISPLAY_DATA7 = 18
 
+
 # Deklarieren der Variabeln Sonstige Variablen
 taste1 = 0
 taste2 = 0
@@ -64,6 +65,14 @@ programmodus = 0
 programm = []
 ganzer_feed = " "
 wetterkommando = " "
+vdisplay_alt_Zeile1 = "                    "
+vdisplay_alt_Zeile2 = "                    "
+vdisplay_alt_Zeile3 = "                    "
+vdisplay_alt_Zeile4 = "                    "
+vdisplay_neu_Zeile1 = "                    "
+vdisplay_neu_Zeile2 = "                    "
+vdisplay_neu_Zeile3 = "                    "
+vdisplay_neu_Zeile4 = "                    "
 feedliste = []
 ortsliste = []
 stationsliste = []
@@ -218,31 +227,67 @@ def cgchar(CGCHR, bytes):
   for value in (bytes[0],bytes[1],bytes[2],bytes[3],bytes[4],bytes[5],bytes[6],bytes[7]):
     lcd_byte(value, DISPLAY_CHR)
 
+# Virtuelles Display
+def display_update():
+	# Virtuelles Display als globale Variablen
+	global vdisplay_alt_Zeile1
+	global vdisplay_alt_Zeile2
+	global vdisplay_alt_Zeile3
+	global vdisplay_alt_Zeile4
+	global vdisplay_neu_Zeile1
+	global vdisplay_neu_Zeile2
+	global vdisplay_neu_Zeile3
+	global vdisplay_neu_Zeile4
+	# Veraenderungen der Zeilen ueberpruefen und gegebenenfalls ueberschreiben
+	# Zeile 1
+	if (vdisplay_neu_Zeile1 != vdisplay_alt_Zeile1):
+		lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
+		lcd_string(vdisplay_neu_Zeile1)
+		vdisplay_alt_Zeile1 = vdisplay_neu_Zeile1
+	# Zeile 2
+	if (vdisplay_neu_Zeile2 != vdisplay_alt_Zeile2):
+		lcd_byte(DISPLAY_LINE_2, DISPLAY_CMD)
+		lcd_string(vdisplay_neu_Zeile2)
+		vdisplay_alt_Zeile2 = vdisplay_neu_Zeile2
+	# Zeile 3
+	if (vdisplay_neu_Zeile3 != vdisplay_alt_Zeile3):
+		lcd_byte(DISPLAY_LINE_3, DISPLAY_CMD)
+		lcd_string(vdisplay_neu_Zeile3)
+		vdisplay_alt_Zeile3 = vdisplay_neu_Zeile3
+	# Zeile 4
+	if (vdisplay_neu_Zeile4 != vdisplay_alt_Zeile4):
+		lcd_byte(DISPLAY_LINE_4, DISPLAY_CMD)
+		lcd_string(vdisplay_neu_Zeile4)
+		vdisplay_alt_Zeile4 = vdisplay_neu_Zeile4
+
 # Funktion um alle Zeilen zu loeschen
 def display_erase():
-	lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
-	lcd_string("                    ")
-	lcd_byte(DISPLAY_LINE_2, DISPLAY_CMD)
-	lcd_string("                    ")
-	lcd_byte(DISPLAY_LINE_3, DISPLAY_CMD)
-	lcd_string("                    ")
-	lcd_byte(DISPLAY_LINE_4, DISPLAY_CMD)
-	lcd_string("                    ")
+	# Virtuelles Display als globale Variablen
+	global vdisplay_neu_Zeile1
+	global vdisplay_neu_Zeile2
+	global vdisplay_neu_Zeile3
+	global vdisplay_neu_Zeile4
+	vdisplay_neu_Zeile1 = "                    "
+	vdisplay_neu_Zeile2 = "                    "
+	vdisplay_neu_Zeile3 = "                    "
+	vdisplay_neu_Zeile4 = "                    "
+	display_update()
 
 # Laufschrift Funktion
 def laufschrift(bereich):
 	# Variablen fuer Timer global setzen
 	global timer
 	global laufzeit
+	global vdisplay_neu_Zeile4
 	for i in range(0,bereich):
 		# Zeile ausgeben
 		ausgabe_laufschrift = station[i:(i+20)]
-		lcd_byte(DISPLAY_LINE_4, DISPLAY_CMD)
-		lcd_string(ausgabe_laufschrift)
+		vdisplay_neu_Zeile4 = ausgabe_laufschrift
+		display_update()
 		time.sleep(0.5)
 		# Zeile loeschen
-		lcd_byte(DISPLAY_LINE_4, DISPLAY_CMD)
-		lcd_string("                    ")
+		vdisplay_neu_Zeile4 = "                    "
+		display_update()
 		# Bei Tastendruck Schleife beenden
 		if (taste1 == 1) or (taste2 == 1) or (taste3 == 1) or (taste4 == 1):
 			break
@@ -284,11 +329,12 @@ def Usbnamen(usbliste):
 	
 # Meldung: kein USB-Stick
 def nousb():
+	global vdisplay_neu_Zeile3
+	global vdisplay_neu_Zeile4
 	display_erase()
-	lcd_byte(DISPLAY_LINE_3, DISPLAY_CMD)
-	lcd_string("Kein USB-Stick, oder")
-	lcd_byte(DISPLAY_LINE_4, DISPLAY_CMD)
-	lcd_string("   keine Dateien !  ")
+	vdisplay_neu_Zeile3 = "Kein USB-Stick, oder"
+	vdisplay_neu_Zeile4 = "   keine Dateien !  "
+	display_update()
 	time.sleep(1)
 	led_gruen()
 	
@@ -326,55 +372,58 @@ def ortsnamen(ortsliste):
 
 # Status Menue USB - Shuffle, Repeat und Programm
 def statususb():
+	global vdisplay_neu_Zeile2
+	global vdisplay_neu_Zeile3
+	global vdisplay_neu_Zeile4
 	global shufflemodus
 	global repeatmodus
 	global programmodus
 	global auswahl4
 	# Anzeige nach Zustand - shuffle
 	if (shufflemodus == 0):
-		lcd_byte(DISPLAY_LINE_2, DISPLAY_CMD)
-		lcd_string("  Shuffle (aus)")
+		vdisplay_neu_Zeile2 = "  Shuffle (aus)"
+		display_update()
 		if (auswahl4 == 1):
-			lcd_byte(DISPLAY_LINE_2, DISPLAY_CMD)
-			lcd_string(chr(0)+" Shuffle (aus)")
+			vdisplay_neu_Zeile2 = chr(0)+" Shuffle (aus)"
+			display_update()
 	elif (shufflemodus == 1):
-		lcd_byte(DISPLAY_LINE_2, DISPLAY_CMD)
-		lcd_string("  Shuffle (an)")
+		vdisplay_neu_Zeile2 = "  Shuffle (an)"
+		display_update()
 		if (auswahl4 == 1):
-			lcd_byte(DISPLAY_LINE_2, DISPLAY_CMD)
-			lcd_string(chr(0)+" Shuffle (an)")
+			vdisplay_neu_Zeile2 = chr(0)+" Shuffle (an)"
+			display_update()
 	# Anzeige nach Zustand - repeat
 	if (repeatmodus == 0):
-		lcd_byte(DISPLAY_LINE_3, DISPLAY_CMD)
-		lcd_string("  Repeat (aus)")
+		vdisplay_neu_Zeile3 = "  Repeat (aus)"
+		display_update()
 		if (auswahl4 == 2):
-			lcd_byte(DISPLAY_LINE_3, DISPLAY_CMD)
-			lcd_string(chr(0)+" Repeat (aus)")
+			vdisplay_neu_Zeile3 = chr(0)+" Repeat (aus)"
+			display_update()
 	elif (repeatmodus == 1):
-		lcd_byte(DISPLAY_LINE_3, DISPLAY_CMD)
-		lcd_string("  Repeat (alles)")
+		vdisplay_neu_Zeile3 = "  Repeat (alles)"
+		display_update()
 		if (auswahl4 == 2):
-			lcd_byte(DISPLAY_LINE_3, DISPLAY_CMD)
-			lcd_string(chr(0)+" Repeat (alles)")
+			vdisplay_neu_Zeile3 = chr(0)+" Repeat (alles)"
+			display_update()
 	elif (repeatmodus == 2):
-		lcd_byte(DISPLAY_LINE_3, DISPLAY_CMD)
-		lcd_string("  Repeat (1 Stueck)")
+		vdisplay_neu_Zeile3 = "  Repeat (1 Stueck)"
+		display_update()
 		if (auswahl4 == 2):
-			lcd_byte(DISPLAY_LINE_3, DISPLAY_CMD)
-			lcd_string(chr(0)+" Repeat (1 Stueck)")
+			vdisplay_neu_Zeile3 = chr(0)+" Repeat (1 Stueck)"
+			display_update()
 	# Anzeige nach Zustand - program
 	if (programmodus == 0):
-		lcd_byte(DISPLAY_LINE_4, DISPLAY_CMD)
-		lcd_string("  Programm (aus)")
+		vdisplay_neu_Zeile4 = "  Programm (aus)"
+		display_update()
 		if (auswahl4 == 3):
-			lcd_byte(DISPLAY_LINE_4, DISPLAY_CMD)
-			lcd_string(chr(0)+" Programm (aus)")
+			vdisplay_neu_Zeile4 = chr(0)+" Programm (aus)"
+			display_update()
 	elif (programmodus == 1):
-		lcd_byte(DISPLAY_LINE_4, DISPLAY_CMD)
-		lcd_string("  Programm (an)")
+		vdisplay_neu_Zeile4 = "  Programm (an)"
+		display_update()
 		if (auswahl4 == 3):
-			lcd_byte(DISPLAY_LINE_4, DISPLAY_CMD)
-			lcd_string(chr(0)+" Programm (an)")
+			vdisplay_neu_Zeile4 = chr(0)+" Programm (an)"
+			display_update()
 			
 # Playlist USB-Modus vorbereiten
 def playlist():
@@ -386,40 +435,44 @@ def playlist():
 
 # Optionsmenue anzeigen
 def Optionsmenue():
+	global vdisplay_neu_Zeile2
+	global vdisplay_neu_Zeile3
+	global vdisplay_neu_Zeile4
 	global auswahl_menu
 	global menuliste
 	global laenge_menu
 	# 1. Zeile
 	if (auswahl_menu < 1):
-		lcd_byte(DISPLAY_LINE_2, DISPLAY_CMD)
-		lcd_string("  "+menuliste[(laenge_menu + auswahl_menu)])
+		vdisplay_neu_Zeile2 = "  "+menuliste[(laenge_menu + auswahl_menu)]
+		display_update()
 	else:
-		lcd_byte(DISPLAY_LINE_2, DISPLAY_CMD)
-		lcd_string("  "+menuliste[(auswahl_menu-1)])
+		vdisplay_neu_Zeile2 = "  "+menuliste[(auswahl_menu-1)]
+		display_update()
 	# 2. Zeile
-	lcd_byte(DISPLAY_LINE_3, DISPLAY_CMD)
-	lcd_string(chr(0)+" "+menuliste[auswahl_menu])
+	vdisplay_neu_Zeile3 = chr(0)+" "+menuliste[auswahl_menu]
+	display_update()
 	# 3. Zeile
 	if (auswahl_menu > (laenge_menu-1)):
-		lcd_byte(DISPLAY_LINE_4, DISPLAY_CMD)
-		lcd_string("  "+menuliste[(laenge_menu - auswahl_menu)])
+		vdisplay_neu_Zeile4 = "  "+menuliste[(laenge_menu - auswahl_menu)]
+		display_update()
 	else:
-		lcd_byte(DISPLAY_LINE_4, DISPLAY_CMD)
-		lcd_string("  "+menuliste[(auswahl_menu+1)])
-
+		vdisplay_neu_Zeile4 = "  "+menuliste[(auswahl_menu+1)]
+		display_update()
+		
 # Herunterfahren
 def Herunterfahren():
+	global vdisplay_neu_Zeile1
+	global vdisplay_neu_Zeile2
+	global vdisplay_neu_Zeile3
+	global vdisplay_neu_Zeile4
 	print ("Eingang 1")
 	taste1 = 0   #Taste zuruecksetzen
 	display_erase()
-	lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
-	lcd_string("********************")
-	lcd_byte(DISPLAY_LINE_2, DISPLAY_CMD)
-	lcd_string("* Webradio wird    *")
-	lcd_byte(DISPLAY_LINE_3, DISPLAY_CMD)
-	lcd_string("* heruntergefahren *")
-	lcd_byte(DISPLAY_LINE_4, DISPLAY_CMD)
-	lcd_string("********************")
+	vdisplay_neu_Zeile1 = "********************"
+	vdisplay_neu_Zeile2 = "* Webradio wird    *"
+	vdisplay_neu_Zeile3 = "* heruntergefahren *"
+	vdisplay_neu_Zeile4 = "********************"
+	display_update()
 	time.sleep(1)
 	display_erase()
 	# mpd beenden
@@ -485,14 +538,11 @@ cgchar(0x78, enter) # Enter auf chr(7) setzen
 IO.output(ausgang4, IO.HIGH)
 
 # Anzeige der Bereitschaft des Webradios
-lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
-lcd_string("********************")
-lcd_byte(DISPLAY_LINE_2, DISPLAY_CMD)
-lcd_string("* Webradio bereit  *")
-lcd_byte(DISPLAY_LINE_3, DISPLAY_CMD)
-lcd_string("*                  *")
-lcd_byte(DISPLAY_LINE_4, DISPLAY_CMD)
-lcd_string("********************")
+vdisplay_neu_Zeile1 = "********************"
+vdisplay_neu_Zeile2 = "* Webradio bereit  *"
+vdisplay_neu_Zeile3 = "*                  *"
+vdisplay_neu_Zeile4 = "********************"
+display_update()
 time.sleep(1)
 print ("Webradio bereit")
 
@@ -504,8 +554,8 @@ Stationsnamen(stationsliste)
 
 # Menue auf LCD anzeigen
 display_erase()
-lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
-lcd_string("  "+chr(0)+"    "+chr(1)+"    "+chr(2)+"    "+chr(3))
+vdisplay_neu_Zeile1 = "  "+chr(0)+"    "+chr(1)+"    "+chr(2)+"    "+chr(3)
+display_update()
 
 # Interrupts definieren
 IO.add_event_detect(eingang1, IO.FALLING, callback=Taster1, bouncetime=500)
@@ -523,10 +573,9 @@ while (abbruch == 0):
 	if ((timer == 1) and (laufzeit <= (int(time.time())))):
 		Herunterfahren()
 	# Auswahl anzeigen
-	lcd_byte(DISPLAY_LINE_2, DISPLAY_CMD)
-	lcd_string("Radiomodus ("+str(auswahl)+")")
-	lcd_byte(DISPLAY_LINE_3, DISPLAY_CMD)
-	lcd_string(stationsliste[(auswahl-1)])
+	vdisplay_neu_Zeile2 = "Radiomodus ("+str(auswahl)+")"
+	vdisplay_neu_Zeile3 = stationsliste[(auswahl-1)]
+	display_update()
 	# Sender ausgeben
 	f = subprocess.Popen(["mpc", "current"], stdout=subprocess.PIPE)
 	station = ""
@@ -544,8 +593,8 @@ while (abbruch == 0):
 		laufschrift(bereich)
 	# Wenn die urspruengliche Laenge 20 Zeichen oder weniger entspricht, station nur statisch ausgeben
 	else:
-		lcd_byte(DISPLAY_LINE_4, DISPLAY_CMD)
-		lcd_string(station)
+		vdisplay_neu_Zeile4 = station
+		display_update()
 	# Taster auswerten
 	if (taste1 == 1):
 		# Radiomodus anschalten
@@ -590,8 +639,8 @@ while (abbruch == 0):
 		print (laenge_menu)
 		# Optionsmenue anzeigen
 		display_erase()
-		lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
-		lcd_string("  "+chr(5)+"    "+chr(7)+"    "+chr(4)+"    "+chr(6))
+		vdisplay_neu_Zeile1 = "  "+chr(5)+"    "+chr(7)+"    "+chr(4)+"    "+chr(6)
+		display_update()
 		Optionsmenue()
 		# Optionsmenue auswerten
 		while (abbruch2 == 0):
@@ -640,57 +689,49 @@ while (abbruch == 0):
 					subprocess.call(["mpc", "stop"])
 					# Display testen
 					display_erase()
-					lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
-					lcd_string("Displaytest:")
-					lcd_byte(DISPLAY_LINE_2, DISPLAY_CMD)
-					lcd_string("--------------------")
-					lcd_byte(DISPLAY_LINE_3, DISPLAY_CMD)
-					lcd_string("ABCDEFGHIJKLMNOPQRST")
-					lcd_byte(DISPLAY_LINE_4, DISPLAY_CMD)
-					lcd_string("abcdefghijklmnopqrst")
+					vdisplay_neu_Zeile1 = "Displaytest:"
+					vdisplay_neu_Zeile2 = "--------------------"
+					vdisplay_neu_Zeile3 = "ABCDEFGHIJKLMNOPQRST"
+					vdisplay_neu_Zeile4 = "abcdefghijklmnopqrst"
+					display_update()
 					time.sleep(1.50)
 					display_erase()
 					# Audioausgabe testen
 					display_erase()
-					lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
-					lcd_string("Test Audio links:")
-					lcd_byte(DISPLAY_LINE_2, DISPLAY_CMD)
-					lcd_string("--------------------")
+					vdisplay_neu_Zeile1 = "Test Audio links:"
+					vdisplay_neu_Zeile2 = "--------------------"
+					display_update()
 					subprocess.call("speaker-test -t wav -w Front_Left.wav -c 2 -s 1", shell=True)
 					time.sleep(1.50)
 					display_erase()
-					lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
-					lcd_string("Test Audio rechts:")
-					lcd_byte(DISPLAY_LINE_2, DISPLAY_CMD)
-					lcd_string("--------------------")
+					vdisplay_neu_Zeile1 = "Test Audio rechts:"
+					vdisplay_neu_Zeile2 = "--------------------"
+					display_update()
 					subprocess.call("speaker-test -t wav -w Front_Right.wav -c 2 -s 2", shell=True)
 					time.sleep(1.50)
 					# LEDs testen
 					display_erase()
-					lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
-					lcd_string("LED Test 1 (Grün):")
-					lcd_byte(DISPLAY_LINE_2, DISPLAY_CMD)
-					lcd_string("--------------------")
+					vdisplay_neu_Zeile1 = "LED Test 1 (Grün):"
+					vdisplay_neu_Zeile2 = "--------------------"
+					display_update()
 					led_gruen()
 					time.sleep(1.50)
 					display_erase()
-					lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
-					lcd_string("LED Test 2 (Blau):")
-					lcd_byte(DISPLAY_LINE_2, DISPLAY_CMD)
-					lcd_string("--------------------")
+					vdisplay_neu_Zeile1 = "LED Test 2 (Blau):"
+					vdisplay_neu_Zeile2 = "--------------------"
+					display_update()
 					led_blau()
 					time.sleep(1.50)
 					display_erase()
-					lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
-					lcd_string("LED Test 3 (Rot):")
-					lcd_byte(DISPLAY_LINE_2, DISPLAY_CMD)
-					lcd_string("--------------------")
+					vdisplay_neu_Zeile1 = "LED Test 3 (Rot):"
+					vdisplay_neu_Zeile2 = "--------------------"
+					display_update()
 					led_rot()
 					time.sleep(1.50)
 					# Optionsmenue wieder herstellen
 					display_erase()
-					lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
-					lcd_string("  "+chr(5)+"    "+chr(7)+"    "+chr(4)+"    "+chr(6))
+					vdisplay_neu_Zeile1 = "  "+chr(5)+"    "+chr(7)+"    "+chr(4)+"    "+chr(6)
+					display_update()
 					# Altes Menue anzeigen
 					Optionsmenue()
 					led_gruen()
@@ -702,25 +743,24 @@ while (abbruch == 0):
 				if (auswahl_menu == 9):
 					subprocess.call(["mpc", "stop"])
 					display_erase()
-					lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
-					lcd_string("  "+chr(7)+"              "+chr(6))
-					lcd_byte(DISPLAY_LINE_2, DISPLAY_CMD)
-					lcd_string("                    ")
+					vdisplay_neu_Zeile1 = "  "+chr(7)+"              "+chr(6)
+					vdisplay_neu_Zeile2 = "                    "
+					display_update()
 					# Bluetooth Status erkennen
 					if (bluetooth == 0):
-						lcd_byte(DISPLAY_LINE_3, DISPLAY_CMD)
-						lcd_string("   Bluetooth (aus)  ")
+						vdisplay_neu_Zeile3 = "   Bluetooth (aus)  "
+						display_update()
 					elif (bluetooth == 1):
-						lcd_byte(DISPLAY_LINE_3, DISPLAY_CMD)
-						lcd_string("   Bluetooth (an)   ")
-					lcd_byte(DISPLAY_LINE_4, DISPLAY_CMD)
-					lcd_string("                    ")
+						vdisplay_neu_Zeile3 = "   Bluetooth (an)   "
+						display_update()
+					vdisplay_neu_Zeile4 = "                    "
+					display_update()
 					# Menue auswerten
 					while (taste4 == 0):
 						if (taste1 == 1):
 							if (bluetooth == 1):
-								lcd_byte(DISPLAY_LINE_3, DISPLAY_CMD)
-								lcd_string("   Bluetooth (aus)  ")
+								vdisplay_neu_Zeile3 = "   Bluetooth (aus)  "
+								display_update()
 								stop_bluetooth()
 								# Gruene LED einschalten
 								led_gruen()
@@ -728,8 +768,8 @@ while (abbruch == 0):
 								bluetooth = 1
 								# Blaue LED einschalten
 								led_blau()
-								lcd_byte(DISPLAY_LINE_3, DISPLAY_CMD)
-								lcd_string("   Bluetooth (an)  ")
+								vdisplay_neu_Zeile3 = "   Bluetooth (an)   "
+								display_update()
 								# Bluetooth starten
 								stop_aplay=subprocess.Popen(["bluealsa-aplay", "00:00:00:00:00:00"])
 							taste1 = 0
@@ -743,8 +783,8 @@ while (abbruch == 0):
 					taste4 = 0
 					# Optionsmenue wieder herstellen
 					display_erase()
-					lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
-					lcd_string("  "+chr(5)+"    "+chr(7)+"    "+chr(4)+"    "+chr(6))
+					vdisplay_neu_Zeile1 = "  "+chr(5)+"    "+chr(7)+"    "+chr(4)+"    "+chr(6)
+					display_update()
 					# Altes Menue anzeigen
 					Optionsmenue()
 				
@@ -784,15 +824,15 @@ while (abbruch == 0):
 				if (auswahl_menu == 7):
 					# Menue auf LCD anzeigen
 					display_erase()
-					lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
-					lcd_string("  "+chr(5)+"    "+chr(7)+"    "+chr(4)+"    "+chr(6))
+					vdisplay_neu_Zeile1 = "  "+chr(5)+"    "+chr(7)+"    "+chr(4)+"    "+chr(6)
+					display_update()
 					# Laufzeit anzeigen
 					if ((timer == 0) or (zeiteinstellung == 0)):
-						lcd_byte(DISPLAY_LINE_3, DISPLAY_CMD)
-						lcd_string("Timer: (aus)")
+						vdisplay_neu_Zeile3 = "Timer: (aus)"
+						display_update()
 					else:
-						lcd_byte(DISPLAY_LINE_3, DISPLAY_CMD)
-						lcd_string("Timer: "+str(zeiteinstellung)+" (min)")
+						vdisplay_neu_Zeile3 = "Timer: "+str(zeiteinstellung)+" (min)"
+						display_update()
 					while (abbruch5 == 0):
 						if ((timer == 1) and (laufzeit <= (int(time.time())))):
 							Herunterfahren()
@@ -800,15 +840,15 @@ while (abbruch == 0):
 						if (laufzeit <= 0):
 							laufzeit = int(time.time())
 						# Datum und Uhrzeit ausgeben
-						lcd_byte(DISPLAY_LINE_2, DISPLAY_CMD)
-						lcd_string(time.strftime("%d.%m.%Y %H:%M:%S"))
+						vdisplay_neu_Zeile2 = time.strftime("%d.%m.%Y %H:%M:%S")
+						display_update()
 						# Countdown ausgeben
 						if (timer == 1):
-							lcd_byte(DISPLAY_LINE_4, DISPLAY_CMD)
-							lcd_string("Noch "+str(int(((laufzeit/60)-(time.time()/60)))+1)+" Minuten")
+							vdisplay_neu_Zeile4 = "Noch "+str(int(((laufzeit/60)-(time.time()/60)))+1)+" Minuten"
+							display_update()
 						else:
-							lcd_byte(DISPLAY_LINE_4, DISPLAY_CMD)
-							lcd_string("Timer ausgeschaltet ")
+							vdisplay_neu_Zeile4 = "Timer ausgeschaltet "
+							display_update()
 						# Um 10 min erhoehen
 						if (taste1 == 1):
 							# Zeit nicht negativ werden lassen
@@ -817,11 +857,11 @@ while (abbruch == 0):
 							else:
 								zeiteinstellung = zeiteinstellung-10
 							if (zeiteinstellung == 0):
-								lcd_byte(DISPLAY_LINE_3, DISPLAY_CMD)
-								lcd_string("Timer: (aus)")
+								vdisplay_neu_Zeile3 = "Timer: (aus)"
+								display_update()
 							else:
-								lcd_byte(DISPLAY_LINE_3, DISPLAY_CMD)
-								lcd_string("Timer: "+str(zeiteinstellung)+" (min)")
+								vdisplay_neu_Zeile3 = "Timer: "+str(zeiteinstellung)+" (min)"
+								display_update()
 							taste1 = 0   #Taste zuruecksetzen
 							time.sleep(0.01)
 						if (taste2 == 1):
@@ -840,8 +880,8 @@ while (abbruch == 0):
 							# Zeitrahmen 24 Stunden
 							if (zeiteinstellung > 1450):
 								zeiteinstellung = 1450
-							lcd_byte(DISPLAY_LINE_3, DISPLAY_CMD)
-							lcd_string("Timer: "+str(zeiteinstellung)+" (min)")
+							vdisplay_neu_Zeile3 = "Timer: "+str(zeiteinstellung)+" (min)"
+							display_update()
 							taste3 = 0   #Taste zuruecksetzen
 							time.sleep(0.01)
 						elif (taste4 == 1):
@@ -853,8 +893,8 @@ while (abbruch == 0):
 					abbruch5 = 0
 					# Optionsmenue anzeigen
 					display_erase()
-					lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
-					lcd_string("  "+chr(5)+"    "+chr(7)+"    "+chr(4)+"    "+chr(6))
+					vdisplay_neu_Zeile1 = "  "+chr(5)+"    "+chr(7)+"    "+chr(4)+"    "+chr(6)
+					display_update()
 					Optionsmenue()
 					
 				#
@@ -864,8 +904,8 @@ while (abbruch == 0):
 				if (auswahl_menu == 6):
 					# Menue auf LCD anzeigen
 					display_erase()
-					lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
-					lcd_string("  "+chr(0)+"    "+chr(1)+"    "+chr(2)+"    "+chr(6))
+					vdisplay_neu_Zeile1 = "  "+chr(0)+"    "+chr(1)+"    "+chr(2)+"    "+chr(6)
+					display_update()
 					# Die RSS - Feed URLs aus Datei einlesen
 					rssnamen(feedliste)
 					print (anzahl_feeds)
@@ -874,25 +914,24 @@ while (abbruch == 0):
 						if ((timer == 1) and (laufzeit <= (int(time.time())))):
 							Herunterfahren()
 						# Auswahl anzeigen
-						lcd_byte(DISPLAY_LINE_2, DISPLAY_CMD)
-						lcd_string("RSS-Feed ("+str(auswahl3)+")")
-						lcd_byte(DISPLAY_LINE_3, DISPLAY_CMD)
-						lcd_string(feedliste[(auswahl3-1)])
+						vdisplay_neu_Zeile2 = "RSS-Feed ("+str(auswahl3)+")"
+						vdisplay_neu_Zeile3 = feedliste[(auswahl3-1)]
+						display_update()
 						# Taster auswerten						
 						if (taste1 == 1):
 							print ("Eingang 1")
 							taste1 = 0   #Taste zuruecksetzen						
 							# Feed herunterladen anzeigen
 							print ("Lade RSS-Feed")
-							lcd_byte(DISPLAY_LINE_4, DISPLAY_CMD)
-							lcd_string("                    ")
-							lcd_byte(DISPLAY_LINE_4, DISPLAY_CMD)
-							lcd_string("Lade RSS-Feed")
+							vdisplay_neu_Zeile4 = "                    "
+							display_update()
+							vdisplay_neu_Zeile4 = "Lade RSS-Feed"
+							display_update()
 							# Feed herunterladen
 							d=feedparser.parse(feedliste[(auswahl3-1)])
 							print ("RSS-Feed geladen")
-							lcd_byte(DISPLAY_LINE_4, DISPLAY_CMD)
-							lcd_string("                    ")
+							vdisplay_neu_Zeile4 = "                    "
+							display_update()
 							time.sleep(0.01)
 							# Titel als erstes lesen
 							ganzer_feed = " "
@@ -938,8 +977,8 @@ while (abbruch == 0):
 					abbruch5 = 0
 					# Optionsmenue anzeigen
 					display_erase()
-					lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
-					lcd_string("  "+chr(5)+"    "+chr(7)+"    "+chr(4)+"    "+chr(6))
+					vdisplay_neu_Zeile1 = "  "+chr(5)+"    "+chr(7)+"    "+chr(4)+"    "+chr(6)
+					display_update()
 					Optionsmenue()
 					
 				#
@@ -951,14 +990,11 @@ while (abbruch == 0):
 					while  (abbruch4 == 0):
 						if ((timer == 1) and (laufzeit <= (int(time.time())))):
 							Herunterfahren()
-						lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
-						lcd_string("  "+chr(7)+"              "+chr(6)+"  ")
-						lcd_byte(DISPLAY_LINE_2, DISPLAY_CMD)
-						lcd_string("--------------------")
-						lcd_byte(DISPLAY_LINE_3, DISPLAY_CMD)
-						lcd_string("  Herunterfahren    ")
-						lcd_byte(DISPLAY_LINE_4, DISPLAY_CMD)
-						lcd_string(" Sind Sie sicher ?  ")
+						vdisplay_neu_Zeile1 = "  "+chr(7)+"              "+chr(6)+"  "
+						vdisplay_neu_Zeile2 = "--------------------"
+						vdisplay_neu_Zeile3 = "  Herunterfahren    "
+						vdisplay_neu_Zeile4 = " Sind Sie sicher ?  "
+						display_update()
 						# Taster auswerten
 						if (taste1 == 1):
 							# Falls Bluetooth-Modus an
@@ -977,8 +1013,8 @@ while (abbruch == 0):
 					abbruch4 = 0
 					# Optionsmenue anzeigen
 					display_erase()
-					lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
-					lcd_string("  "+chr(5)+"    "+chr(7)+"    "+chr(4)+"    "+chr(6))
+					vdisplay_neu_Zeile1 = "  "+chr(5)+"    "+chr(7)+"    "+chr(4)+"    "+chr(6)
+					display_update()
 					Optionsmenue()
 					
 				#
@@ -1017,8 +1053,8 @@ while (abbruch == 0):
 					# Wenn Daten gefunden, dann erste Menuezeile anzeigen
 					if (anzahl_mp3 > 0):
 						display_erase()
-						lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
-						lcd_string("  "+chr(0)+"    "+chr(1)+"    "+chr(2)+"    "+chr(6))
+						vdisplay_neu_Zeile1 = "  "+chr(0)+"    "+chr(1)+"    "+chr(2)+"    "+chr(6)
+						display_update()
 					# Playlist auf die programmierten Stuecke kuerzen
 					if (programmodus == 1):
 						# Playlist fuer mpc loeschen
@@ -1043,10 +1079,9 @@ while (abbruch == 0):
 						if ((timer == 1) and (laufzeit <= (int(time.time())))):
 							Herunterfahren()
 						# Auswahl anzeigen
-						lcd_byte(DISPLAY_LINE_2, DISPLAY_CMD)
-						lcd_string("USB - Stick ("+str(auswahl2)+")")
-						lcd_byte(DISPLAY_LINE_3, DISPLAY_CMD)
-						lcd_string((usbliste[((auswahl2)-1)])[5:])
+						vdisplay_neu_Zeile2 = "USB - Stick ("+str(auswahl2)+")"
+						vdisplay_neu_Zeile3 = (usbliste[((auswahl2)-1)])[5:]
+						display_update()
 						# Stuecke ausgeben
 						f = subprocess.Popen(["mpc", "current"], stdout=subprocess.PIPE)
 						station = ""
@@ -1064,8 +1099,8 @@ while (abbruch == 0):
 							laufschrift(bereich)
 						# Wenn die urspruengliche Laenge 20 Zeichen oder weniger entspricht, station nur statisch ausgeben
 						else:
-							lcd_byte(DISPLAY_LINE_4, DISPLAY_CMD)
-							lcd_string(station)
+							vdisplay_neu_Zeile4 = station
+							display_update()
 						# Taster auswerten
 						if (taste1 == 1):
 							# USB Modus einschalten
@@ -1114,8 +1149,8 @@ while (abbruch == 0):
 					time.sleep(0.01)
 					# Optionsmenue wieder herstellen
 					display_erase()
-					lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
-					lcd_string("  "+chr(5)+"    "+chr(7)+"    "+chr(4)+"    "+chr(6))
+					vdisplay_neu_Zeile1 = "  "+chr(5)+"    "+chr(7)+"    "+chr(4)+"    "+chr(6)
+					display_update()
 					# Altes Menue anzeigen
 					Optionsmenue()
 				
@@ -1126,8 +1161,8 @@ while (abbruch == 0):
 				if (auswahl_menu == 10):
 					# Menue auf LCD anzeigen
 					display_erase()
-					lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
-					lcd_string("  "+chr(5)+"    "+chr(7)+"    "+chr(4)+"    "+chr(6))
+					vdisplay_neu_Zeile1 = "  "+chr(5)+"    "+chr(7)+"    "+chr(4)+"    "+chr(6)
+					display_update()
 					statususb()
 					while (abbruch3 == 0):
 						# Taster auswerten						
@@ -1174,23 +1209,23 @@ while (abbruch == 0):
 									time.sleep(0.01)
 								# Auswahl USB Programm
 								if (len(programm) == 0):
-									lcd_byte(DISPLAY_LINE_4, DISPLAY_CMD)
-									lcd_string("                    ")
+									vdisplay_neu_Zeile4 = "                    "
+									display_update()
 								elif (len(programm) > 0):
-									lcd_byte(DISPLAY_LINE_4, DISPLAY_CMD)
-									lcd_string("Programmiert : "+str(len(programm)))
+									vdisplay_neu_Zeile4 = "Programmiert : "+str(len(programm))
+									display_update()
 								while ((abbruch6 == 0) and (anzahl_mp3 > 0)):
 									if ((timer == 1) and (laufzeit <= (int(time.time())))):
 										Herunterfahren()
 									# Auswahl anzeigen
-									lcd_byte(DISPLAY_LINE_2, DISPLAY_CMD)
-									lcd_string("USB - Auswahl ("+str(auswahl2)+")")
+									vdisplay_neu_Zeile2 = "USB - Auswahl ("+str(auswahl2)+")"
+									display_update()
 									if (auswahl2 > 0):
-										lcd_byte(DISPLAY_LINE_3, DISPLAY_CMD)
-										lcd_string((usbliste[((auswahl2)-1)])[5:])
+										vdisplay_neu_Zeile3 = (usbliste[((auswahl2)-1)])[5:]
+										display_update()
 									elif (auswahl2 == 0):
-										lcd_byte(DISPLAY_LINE_3, DISPLAY_CMD)
-										lcd_string("Programm ausschalten")
+										vdisplay_neu_Zeile3 = "Programm ausschalten"
+										display_update()
 									# Taster auswerten
 									if (taste1 == 1):
 										print ("Eingang 2")
@@ -1206,8 +1241,8 @@ while (abbruch == 0):
 										# Wenn "Programm ausschalten" aktiviert ist
 										if (auswahl2 == 0):
 											programm = []
-											lcd_byte(DISPLAY_LINE_4, DISPLAY_CMD)
-											lcd_string("Programmiert : 0    ")
+											vdisplay_neu_Zeile4 = "Programmiert : 0    "
+											display_update()
 											usbmodus = 0
 											programmodus = 0
 											auswahl2 = 1
@@ -1217,8 +1252,8 @@ while (abbruch == 0):
 											if (programm.count(auswahl2) == 0):
 												programm.append (auswahl2)
 											print (programm)
-											lcd_byte(DISPLAY_LINE_4, DISPLAY_CMD)
-											lcd_string("Programmiert : "+str(len(programm)))
+											vdisplay_neu_Zeile4 = "Programmiert : "+str(len(programm))
+											display_update()
 											usbmodus = 1
 											led_rot()
 											programmodus = 1
@@ -1239,9 +1274,8 @@ while (abbruch == 0):
 										abbruch6 = 1
 								abbruch6 = 0		
 							# Menue auf LCD anzeigen
-							display_erase()
-							lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
-							lcd_string("  "+chr(5)+"    "+chr(7)+"    "+chr(4)+"    "+chr(6))
+							vdisplay_neu_Zeile1 = "  "+chr(5)+"    "+chr(7)+"    "+chr(4)+"    "+chr(6)
+							display_update()
 							statususb()
 							taste2 = 0   #Taste zuruecksetzen
 							time.sleep(0.01)
@@ -1263,8 +1297,8 @@ while (abbruch == 0):
 					time.sleep(0.01)
 					# Optionsmenue wieder herstellen
 					display_erase()
-					lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
-					lcd_string("  "+chr(5)+"    "+chr(7)+"    "+chr(4)+"    "+chr(6))
+					vdisplay_neu_Zeile1 = "  "+chr(5)+"    "+chr(7)+"    "+chr(4)+"    "+chr(6)
+					display_update()
 					# Altes Menue anzeigen
 					Optionsmenue()
 				
@@ -1275,8 +1309,8 @@ while (abbruch == 0):
 				if (auswahl_menu == 8):
 					# Menue auf LCD anzeigen
 					display_erase()
-					lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
-					lcd_string("  "+chr(0)+"    "+chr(1)+"    "+chr(2)+"    "+chr(6))
+					vdisplay_neu_Zeile1 = "  "+chr(0)+"    "+chr(1)+"    "+chr(2)+"    "+chr(6)
+					display_update()
 					# Ortsnamen aus Datei einlesen
 					ortsnamen(ortsliste)
 					print (anzahl_orte)
@@ -1285,17 +1319,16 @@ while (abbruch == 0):
 						if ((timer == 1) and (laufzeit <= (int(time.time())))):
 							Herunterfahren()
 						# Auswahl anzeigen
-						lcd_byte(DISPLAY_LINE_2, DISPLAY_CMD)
-						lcd_string("Wetter ("+str(auswahl3)+")")
-						lcd_byte(DISPLAY_LINE_3, DISPLAY_CMD)
-						lcd_string(ortsliste[(auswahl3-1)])
+						vdisplay_neu_Zeile2 = "Wetter ("+str(auswahl3)+")"
+						vdisplay_neu_Zeile3 = ortsliste[(auswahl3-1)]
+						display_update()
 						# Taster auswerten						
 						if (taste1 == 1):
 							print ("Eingang 1")
 							taste1 = 0   #Taste zuruecksetzen						
 							time.sleep(0.01)
-							lcd_byte(DISPLAY_LINE_4, DISPLAY_CMD)
-							lcd_string("* Hole Wetterdaten *")
+							vdisplay_neu_Zeile4 = "* Hole Wetterdaten *"
+							display_update()
 							# Kommandozeilenbefehl Aktuelles Wetter erstellen
 							wetterkommando = "ansiweather -l " + ortsliste[auswahl3-1] + ",DE -a false -s true"
 							# Aktuelles Wetter ausgeben
@@ -1378,8 +1411,8 @@ while (abbruch == 0):
 					abbruch5 = 0
 					# Optionsmenue anzeigen
 					display_erase()
-					lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
-					lcd_string("  "+chr(5)+"    "+chr(7)+"    "+chr(4)+"    "+chr(6))
+					vdisplay_neu_Zeile1 = "  "+chr(5)+"    "+chr(7)+"    "+chr(4)+"    "+chr(6)
+					display_update()
 					Optionsmenue()
 									
 			# Im Optionsmenue eins rauf gehen
@@ -1414,8 +1447,8 @@ while (abbruch == 0):
 					led_gruen()	
 				# Menue zuruecksetzen
 				display_erase()
-				lcd_byte(DISPLAY_LINE_1, DISPLAY_CMD)
-				lcd_string("  "+chr(0)+"    "+chr(1)+"    "+chr(2)+"    "+chr(3))
+				vdisplay_neu_Zeile1 = "  "+chr(0)+"    "+chr(1)+"    "+chr(2)+"    "+chr(3)
+				display_update()
 				time.sleep(0.01)
 
 # mpd beenden
