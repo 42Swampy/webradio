@@ -4,13 +4,10 @@ After=network.target
 
 
 [Service]
-Type=idle
+Type=oneshot
 
 User=pi
 ExecStart=/usr/bin/python3 /home/pi/Python/webradio.py
-
-Restart=always
-RestartSec=0
 
 [Install]
 WantedBy=multi-user.target
