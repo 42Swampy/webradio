@@ -1,25 +1,28 @@
 #EXTM3U
 #EXTINF:-1,FM4
-http://mp3stream1.apasf.apa.at:8000
+https://orf-live.ors-shoutcast.at/fm4-q2a
 #EXTINF:-1,SWR3
-http://swr-swr3-live.cast.addradio.de/swr/swr3/live/mp3/128/stream.mp3
+https://liveradio.swr.de/sw282p3/swr3/play.mp3
 #EXTINF:-1,SWR2
-http://swr-swr2-live.cast.addradio.de/swr/swr2/live/mp3/256/stream.mp3
+https://liveradio.swr.de/sw282p3/swr2/play.mp3
 #EXTINF:-1,1LIVE
 http://wdr-1live-live.icecast.wdr.de/wdr/1live/live/mp3/128/stream.mp3
 #EXTINF:-1,1LIVE diggi
 http://wdr-1live-diggi.icecast.wdr.de/wdr/1live/diggi/mp3/128/stream.mp3
-#EXTINF:-1,BR5
-http://br-b5aktuell-live.cast.addradio.de/br/b5aktuell/live/mp3/128/stream.mp3
-#EXTINF:-1,BR5 plus
-http://br-b5plus-live.cast.addradio.de/br/b5plus/live/mp3/128/stream.mp3
+#EXTINF:-1,BR24
+https://dispatcher.rndfnk.com/br/br24/live/mp3/mid
+#EXTINF:-1,BR24 live
+https://dispatcher.rndfnk.com/br/br24live/live/mp3/mid
 #EXTINF:-1,BR3
 http://br-br3-live.cast.addradio.de/br/br3/live/mp3/128/stream.mp3
 #EXTINF:-1,Fritz
-http://rbb-fritz-live.cast.addradio.de/rbb/fritz/live/mp3/128/stream.mp3
+http://www.fritz.de/livemp3
 #EXTINF:-1,DASDING
-https://swr-dasding-live.sslcast.addradio.de/swr/dasding/live/mp3/128/stream.mp3
+https://liveradio.swr.de/d9zadj3/dasding/
 #EXTINF:-1,Deutschlandfunk
 http://st01.dlf.de/dlf/01/128/mp3/stream.mp3
 #EXTINF:-1,ByteFM
-https://bytefm.sslcast.addradio.de/bytefm/main/mid/stream.mp3
+http://bytefm.cast.addradio.de/bytefm/main/mid/stream
+#EXTINF:-1,Löwenradio
+https://tsv1860.stream24.net/live.mp3
+
